@@ -57,5 +57,10 @@ module.exports = {
       args: "run deploy:market:polygon:test",
       ...commons,
     },
+    {
+      name: "zksync-testnet-v3",
+      args: "run deploy:market:zksync:test",
+      ...commons,
+    },
   ],
 };

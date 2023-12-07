@@ -48,5 +48,10 @@ module.exports = {
       args: "run deploy:market:polygon:main",
       ...commons,
     },
+    {
+      name: "zksync-main-v3",
+      args: "run deploy:market:zksync:main",
+      ...commons,
+    },
   ],
 };

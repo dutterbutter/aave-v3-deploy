@@ -11,6 +11,7 @@ import {
   eAvalancheNetwork,
   eFantomNetwork,
   eOptimismNetwork,
+  ezkSyncNetwork,
 } from "./types";
 
 require("dotenv").config();
@@ -47,6 +48,10 @@ export const getAlchemyKey = (net: eNetwork) => {
       return process.env.GOERLI_ALCHEMY_KEY || ALCHEMY_KEY;
     case eEthereumNetwork.sepolia:
       return process.env.SEPOLIA_ALCHEMY_KEY || ALCHEMY_KEY;
+    case ezkSyncNetwork.testnet:
+      return process.env.ZKSYNC_SEPOLIA_ALCHEMY_KEY || ALCHEMY_KEY;
+    case ezkSyncNetwork.main:
+      return process.env.ZKSYNC_ALCHEMY_KEY || ALCHEMY_KEY;
     default:
       return ALCHEMY_KEY;
   }
@@ -91,6 +96,8 @@ export const NETWORKS_RPC_URL: iParamsPerNetwork<string> = {
     eEthereumNetwork.sepolia
   )}`,
   [eArbitrumNetwork.goerliNitro]: `https://goerli-rollup.arbitrum.io/rpc`,
+  [ezkSyncNetwork.testnet]: `https://sepolia.era.zksync.dev`,
+  [ezkSyncNetwork.main]: `https://mainnet.era.zksync.io`,
 };
 
 export const LIVE_NETWORKS: iParamsPerNetwork<boolean> = {
@@ -101,6 +108,7 @@ export const LIVE_NETWORKS: iParamsPerNetwork<boolean> = {
   [eAvalancheNetwork.avalanche]: true,
   [eFantomNetwork.main]: true,
   [eOptimismNetwork.main]: true,
+  [ezkSyncNetwork.main]: true,
 };
 
 const GAS_PRICE_PER_NET: iParamsPerNetwork<string | number> = {
@@ -158,6 +166,7 @@ const MNEMONICS: iParamsPerNetwork<string> = {
   [eArbitrumNetwork.arbitrumTestnet]: process.env.ARBITRUM_MNEMONIC,
   [ePolygonNetwork.mumbai]: process.env.POLYGON_MUMBAI_MNEMONIC,
   [ePolygonNetwork.polygon]: process.env.POLYGON_MNEMONIC,
+  [ezkSyncNetwork.testnet]: process.env.ZKSYNC_MNEMONIC,
 };
 
 export const hardhatNetworkSettings = {

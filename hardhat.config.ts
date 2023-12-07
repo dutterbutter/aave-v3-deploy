@@ -15,12 +15,16 @@ import {
   eOptimismNetwork,
   ePolygonNetwork,
   eTenderly,
+  ezkSyncNetwork,
 } from "./helpers/types";
 import { DEFAULT_NAMED_ACCOUNTS } from "./helpers/constants";
 
 import "@nomicfoundation/hardhat-toolbox";
 import "hardhat-deploy";
 import "hardhat-contract-sizer";
+import "@matterlabs/hardhat-zksync-deploy";
+import "@matterlabs/hardhat-zksync-solc";
+import "@matterlabs/hardhat-zksync-verify";
 import "hardhat-dependency-compiler";
 import "@nomicfoundation/hardhat-chai-matchers";
 
@@ -37,6 +41,46 @@ export default {
     alphaSort: true,
     runOnCompile: false,
     disambiguatePaths: false,
+  },
+  zksolc: {
+    version: "latest",
+    settings: {
+      forceEvmla: false,
+      libraries: {
+        // TODO: need to clarify addresses here
+        "@aave/core-v3/contracts/protocol/libraries/logic/LiquidationLogic.sol":
+          {
+            LiquidationLogic: "0x7A7AA626a497Eb9021BE271f25D265E627f4396D",
+          },
+
+        "@aave/core-v3/contracts/protocol/libraries/logic/EModeLogic.sol": {
+          EModeLogic: "0x0F1fa870cae47A14b9155e4A9b74694a4573c063",
+        },
+
+        "@aave/core-v3/contracts/protocol/libraries/logic/BorrowLogic.sol": {
+          BorrowLogic: "0x953E2859b9FDD4A2672F10eD44f9A9A9f7A651AF",
+        },
+        "@aave/core-v3/contracts/protocol/libraries/logic/FlashLoanLogic.sol": {
+          FlashLoanLogic: "0xfA467fF2268D224b6759E3cD7d0Ec1e8300d376A",
+        },
+
+        "@aave/core-v3/contracts/protocol/libraries/logic/SupplyLogic.sol": {
+          SupplyLogic: "0xe0F0DF7E3f306F52743403946A9D3e8b27c78e6F",
+        },
+
+        "@aave/core-v3/contracts/protocol/libraries/logic/PoolLogic.sol": {
+          PoolLogic: "0x480F31A8eA654E51FA207E77cDD54b9297fF5Ee6",
+        },
+        "@aave/core-v3/contracts/protocol/libraries/logic/BridgeLogic.sol": {
+          BridgeLogic: "0x020cDC455Bf6c8b6F42642d6aC221ABE219a9CD0",
+        },
+
+        "@aave/core-v3/contracts/protocol/libraries/logic/ConfiguratorLogic.sol":
+          {
+            ConfiguratorLogic: "0x4778bd941658c73ef7d539d61c2cA5530D067A9C",
+          },
+      },
+    },
   },
   solidity: {
     compilers: [
@@ -120,6 +164,11 @@ export default {
     [eArbitrumNetwork.goerliNitro]: getCommonNetworkConfig(
       eArbitrumNetwork.goerliNitro,
       421613
+    ),
+    [ezkSyncNetwork.main]: getCommonNetworkConfig(ezkSyncNetwork.main, 324),
+    [ezkSyncNetwork.testnet]: getCommonNetworkConfig(
+      ezkSyncNetwork.testnet,
+      300
     ),
   },
   namedAccounts: {

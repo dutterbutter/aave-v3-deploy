@@ -5,6 +5,7 @@ import {
   eHarmonyNetwork,
   eOptimismNetwork,
   ePolygonNetwork,
+  ezkSyncNetwork,
   TransferStrategy,
 } from "./../../helpers/types";
 import { ZERO_ADDRESS } from "../../helpers/constants";
@@ -78,6 +79,7 @@ export const CommonsConfig: ICommonConfiguration = {
       [eFantomNetwork.main]: true,
       [eHarmonyNetwork.main]: true,
       [eAvalancheNetwork.avalanche]: true,
+      [ezkSyncNetwork.main]: true, 
     },
     rewards: {
       [eArbitrumNetwork.arbitrumTestnet]: {
@@ -158,6 +160,7 @@ export const CommonsConfig: ICommonConfiguration = {
     [eArbitrumNetwork.arbitrumTestnet]: true,
     [eOptimismNetwork.main]: true,
     [eOptimismNetwork.testnet]: true,
+    [ezkSyncNetwork.testnet]: true,
   },
   ParaswapRegistry: {
     [eEthereumNetwork.main]: "0xa68bEA62Dc4034A689AA0F58A76681433caCa663",
@@ -165,6 +168,8 @@ export const CommonsConfig: ICommonConfiguration = {
     [eAvalancheNetwork.avalanche]: "0xfD1E5821F07F1aF812bB7F3102Bfd9fFb279513a",
     [eFantomNetwork.main]: "0x161383b5dAFc1cc05Ec058e5B0b0703BA175bdA6",
     [eArbitrumNetwork.arbitrum]: "0xdC6E2b14260F972ad4e5a31c68294Fba7E720701",
+    // TODO:
+    [ezkSyncNetwork.main]: "",
   },
   FlashLoanPremiums: {
     total: 0.0005e4,
