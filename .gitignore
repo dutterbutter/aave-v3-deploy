@@ -19,3 +19,5 @@ coverage
 typechain
 types
 deployments
+artifacts-zk
+cache-zk
