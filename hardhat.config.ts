@@ -14,10 +14,13 @@ import {
   eHarmonyNetwork,
   eOptimismNetwork,
   ePolygonNetwork,
+  ezkSyncNetwork,
   eTenderly,
 } from "./helpers/types";
 import { DEFAULT_NAMED_ACCOUNTS } from "./helpers/constants";
 
+import "@matterlabs/hardhat-zksync-deploy";
+import "@matterlabs/hardhat-zksync-solc";
 import "@nomicfoundation/hardhat-toolbox";
 import "hardhat-deploy";
 import "hardhat-contract-sizer";
@@ -37,6 +40,42 @@ export default {
     alphaSort: true,
     runOnCompile: false,
     disambiguatePaths: false,
+  },
+  zksolc: {
+    version: "latest",
+    settings: {
+      forceEvmla: true,
+      optimizer: {
+        enabled: true,
+        mode: "3",
+      },
+      libraries: {
+        "@aave/core-v3/contracts/protocol/libraries/logic/ConfiguratorLogic.sol": {
+          "ConfiguratorLogic": "0xaE7F6b4f2fF21fC5Fc52932A25faea11Bf5F509e"
+        },
+        "@aave/core-v3/contracts/protocol/libraries/logic/PoolLogic.sol": {
+          "PoolLogic": "0x491708aC0aC935E75b3bE8281639D5165e03A8A5"
+        },
+        "@aave/core-v3/contracts/protocol/libraries/logic/BridgeLogic.sol": {
+          "BridgeLogic": "0x0c1ee95331D377315117FC810E728Aa811589040"
+        },
+        "@aave/core-v3/contracts/protocol/libraries/logic/SupplyLogic.sol": {
+          "SupplyLogic": "0xdf5445d8518Ab352f721dAf6D945E20795e6A8A8"
+        },
+        "@aave/core-v3/contracts/protocol/libraries/logic/BorrowLogic.sol": {
+          "BorrowLogic": "0x8b6E8186dE74fe0128C0a6a3B2733c1365f4c9e2"
+        },
+        "@aave/core-v3/contracts/protocol/libraries/logic/FlashLoanLogic.sol": {
+          "FlashLoanLogic": "0xf2E854A9ffA62D95eE2fdB103dF89df69FD598b0"
+        },
+        "@aave/core-v3/contracts/protocol/libraries/logic/EModeLogic.sol": {
+          "EModeLogic": "0x4da8b63F2Ce2331065E9EE1ED79Fe157B2Bd3286"
+        },
+        "@aave/core-v3/contracts/protocol/libraries/logic/LiquidationLogic.sol": {
+          "LiquidationLogic": "0xB3b570E884254131ef47eF26A01975918672Dc86"
+        }
+      },
+    },
   },
   solidity: {
     compilers: [
@@ -121,6 +160,16 @@ export default {
       eArbitrumNetwork.goerliNitro,
       421613
     ),
+    [ezkSyncNetwork.main]: getCommonNetworkConfig(ezkSyncNetwork.main, 324),
+    [ezkSyncNetwork.zkSyncGoerli]: getCommonNetworkConfig(
+      ezkSyncNetwork.zkSyncGoerli,
+      280
+    ),
+    [ezkSyncNetwork.zkSyncSepolia]: getCommonNetworkConfig(
+      ezkSyncNetwork.zkSyncSepolia,
+      300
+    ),
+    zkSyncLocal: getCommonNetworkConfig(ezkSyncNetwork.zkSyncLocal, 260),
   },
   namedAccounts: {
     ...DEFAULT_NAMED_ACCOUNTS,
@@ -137,6 +186,9 @@ export default {
       "@aave/core-v3/contracts/protocol/tokenization/DelegationAwareAToken.sol",
       "@aave/core-v3/contracts/protocol/tokenization/StableDebtToken.sol",
       "@aave/core-v3/contracts/protocol/tokenization/VariableDebtToken.sol",
+      "@aave/core-v3/contracts/protocol/libraries/logic/LiquidationLogic.sol",
+      "@aave/core-v3/contracts/protocol/libraries/logic/PoolLogic.sol",
+      "@aave/core-v3/contracts/protocol/libraries/logic/ConfiguratorLogic.sol",
       "@aave/core-v3/contracts/protocol/libraries/logic/GenericLogic.sol",
       "@aave/core-v3/contracts/protocol/libraries/logic/ValidationLogic.sol",
       "@aave/core-v3/contracts/protocol/libraries/logic/ReserveLogic.sol",

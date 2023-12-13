@@ -17,7 +17,8 @@ export type eNetwork =
   | eHarmonyNetwork
   | eFantomNetwork
   | eOptimismNetwork
-  | eTenderlyNetwork;
+  | eTenderlyNetwork
+  | ezkSyncNetwork;
 
 type eTenderlyNetwork = "tenderly";
 
@@ -67,6 +68,13 @@ export enum eArbitrumNetwork {
 export enum eHarmonyNetwork {
   main = "harmony",
   testnet = "harmony-testnet",
+}
+
+export enum ezkSyncNetwork {
+  main = "zkSync",
+  zkSyncLocal = "zkSync-local",
+  zkSyncSepolia = "zkSync-sepolia",
+  zkSyncGoerli = "zkSync-goerli",
 }
 
 export enum EthereumNetworkNames {
@@ -459,6 +467,13 @@ export interface iAvalancheParamsPerNetwork<T> {
 export interface iArbitrumParamsPerNetwork<T> {
   [eArbitrumNetwork.arbitrum]: T;
   [eArbitrumNetwork.arbitrumTestnet]: T;
+}
+
+export interface izkSyncParamsPerNetwork<T> {
+  [ezkSyncNetwork.main]: T;
+  [ezkSyncNetwork.zkSyncLocal]: T;
+  [ezkSyncNetwork.zkSyncSepolia]: T;
+  [ezkSyncNetwork.zkSyncGoerli]: T;
 }
 
 export interface iParamsPerPool<T> {
