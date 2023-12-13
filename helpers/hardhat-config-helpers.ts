@@ -20,6 +20,7 @@ export const DEFAULT_BLOCK_GAS_LIMIT = 12450000;
 export const DEFAULT_GAS_PRICE = 8000000000;
 export const INFURA_KEY = process.env.INFURA_KEY || "";
 export const ALCHEMY_KEY = process.env.ALCHEMY_KEY || "";
+export const QUICK_NODE_KEY = process.env.QUICK_NODE_KEY || "";
 export const TENDERLY_FORK_ID = process.env.TENDERLY_FORK_ID || "";
 export const FORK = (process.env.FORK || "") as eNetwork;
 export const FORK_BLOCK_NUMBER = process.env.FORK_BLOCK_NUMBER
@@ -48,12 +49,13 @@ export const getAlchemyKey = (net: eNetwork) => {
       return process.env.GOERLI_ALCHEMY_KEY || ALCHEMY_KEY;
     case eEthereumNetwork.sepolia:
       return process.env.SEPOLIA_ALCHEMY_KEY || ALCHEMY_KEY;
+    // @zkSync networks not supported by Alchemy; use QuickNode instead 
     case ezkSyncNetwork.zkSyncGoerli:
-      return process.env.ZKSYNC_GOERLI_ALCHEMY_KEY || ALCHEMY_KEY;
+      return process.env.ZKSYNC_GOERLI_QUICK_NODE_KEY || QUICK_NODE_KEY;
     case ezkSyncNetwork.zkSyncSepolia:
-      return process.env.ZKSYNC_SEPOLIA_ALCHEMY_KEY || ALCHEMY_KEY;
+      return process.env.ZKSYNC_SEPOLIA_QUICK_NODE_KEY || QUICK_NODE_KEY;
     case ezkSyncNetwork.main:
-      return process.env.ZKSYNC_ALCHEMY_KEY || ALCHEMY_KEY;
+      return process.env.ZKSYNC_QUICK_NODE_KEY || QUICK_NODE_KEY;
     default:
       return ALCHEMY_KEY;
   }
@@ -161,11 +163,28 @@ export const getCommonNetworkConfig = (
     },
   }),
   live: LIVE_NETWORKS[networkName] || false,
+  // @zkSync used by zkSync HH config
   ...(networkName.includes("zkSync") && {
-    ethNetwork: "goerli",
+    ethNetwork: determineEthNetworkForZkSync(networkName),
     zksync: true,
   }),
 });
+
+// @zkSync used to determine the correct L1 eth network for zkSync HH config
+export const determineEthNetworkForZkSync = (networkName: eNetwork,) => {
+  let ethNetworkValue = "mainnet";
+
+  if (networkName.includes("zkSync")) {
+    if (networkName.includes("goerli") || networkName.includes("local")) {
+      ethNetworkValue = "goerli";
+    } else if (networkName.includes("sepolia")) {
+      ethNetworkValue = "sepolia";
+    }
+  }
+
+  return ethNetworkValue;
+}
+
 
 const MNEMONICS: iParamsPerNetwork<string> = {
   [eAvalancheNetwork.fuji]: process.env.FUJI_MNEMONIC,
