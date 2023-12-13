@@ -21,6 +21,7 @@ import FantomMarket from "../markets/fantom";
 import PolygonMarket from "../markets/polygon";
 import OptimisticConfig from "../markets/optimistic";
 import ArbitrumConfig from "../markets/arbitrum";
+import zkSyncConfig from "../markets/zksync";
 import { isValidAddress } from "./utilities/utils";
 import { AaveProtocolDataProvider } from "../typechain";
 import {
@@ -48,6 +49,7 @@ export enum ConfigNames {
   Polygon = "Polygon",
   Optimistic = "Optimistic",
   Arbitrum = "Arbitrum",
+  zkSync = "zkSync",
   Ethereum = "Ethereum",
 }
 
@@ -112,6 +114,8 @@ export const loadPoolConfig = (configName: ConfigNames): PoolConfiguration => {
       return OptimisticConfig;
     case ConfigNames.Arbitrum:
       return ArbitrumConfig;
+    case ConfigNames.zkSync:
+      return zkSyncConfig;
     case ConfigNames.Ethereum:
       return EthereumV3Config;
     default:
