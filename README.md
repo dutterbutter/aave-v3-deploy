@@ -25,6 +25,51 @@ This Node.js repository contains the configuration and deployment scripts for th
    npm run compile
    ```
 
+3. Compiling contracts targeting `zkSync`:
+
+   ```
+   # zkSync-goerli | zkSync-sepolia | zkSyncLocal | zkSync
+   HARDHAT_NETWORK=zkSync-goerli SKIP_LOAD=true npx hardhat compile
+   ```
+
+- **3a.** Once compiled you will be prompted "**To compile and deploy libraries, please run: `yarn hardhat deploy-zksync:libraries --private-key <PRIVATE_KEY>`**"
+
+   ```
+   yarn hardhat deploy-zksync:libraries --private-key <PRIVATE_KEY> --network zkSync-goerli
+   ```
+
+- **3b.** Once deployed add deployed library output from console to HardHat configuration in the `libraries {}` field under `zksolc`:
+
+   ```
+   libraries: {
+      // @zkSync: These are deployed addresses on zkSync Goerli
+      // TODO: need to update these addresses with the correct ones later
+      "@aave/core-v3/contracts/protocol/libraries/logic/ConfiguratorLogic.sol": {
+         "ConfiguratorLogic": "0xe24eA68C46fe765E030Bc14baFa087a865d389a6"
+      },
+      "@aave/core-v3/contracts/protocol/libraries/logic/PoolLogic.sol": {
+         "PoolLogic": "0x670eFBdFa365A8de51a72447837226852E53fe43"
+      },
+      "@aave/core-v3/contracts/protocol/libraries/logic/BridgeLogic.sol": {
+         "BridgeLogic": "0x10079a3854039F10E071bB3f054D463568EAC317"
+      },
+      "@aave/core-v3/contracts/protocol/libraries/logic/SupplyLogic.sol": {
+         "SupplyLogic": "0x0c950296714AB383ff4D478262863204a5d4788e"
+      },
+      "@aave/core-v3/contracts/protocol/libraries/logic/BorrowLogic.sol": {
+         "BorrowLogic": "0xF65f7A0F52B921e18Ff8e25f14AEAB3978f8fBdB"
+      },
+      "@aave/core-v3/contracts/protocol/libraries/logic/FlashLoanLogic.sol": {
+         "FlashLoanLogic": "0x6B6025aCFfbc5306FA61cB8708b589baBCb7658e"
+      },
+      "@aave/core-v3/contracts/protocol/libraries/logic/EModeLogic.sol": {
+         "EModeLogic": "0x9cfD416c110A3CE6E7c40AB63965EA0a5553aa7c"
+      },
+      "@aave/core-v3/contracts/protocol/libraries/logic/LiquidationLogic.sol": {
+         "LiquidationLogic": "0xC25F04991577522ef546218606E8a35a565bCDA2"
+      }
+   },
+   ```
 ## How to deploy Aave V3 in testnet network
 
 To deploy Aave V3 in a Testnet network, copy the `.env.example` into a `.env` file, and fill the environment variables `MNEMONIC`, and `ALCHEMY_KEY`.

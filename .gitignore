@@ -3,6 +3,9 @@
 #Buidler files
 cache
 artifacts
+cache-zk
+artifacts-zk
+.zksolc-libraries-cache
 
 node_modules
 dist/
