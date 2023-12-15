@@ -35,7 +35,7 @@ This Node.js repository contains the configuration and deployment scripts for th
 - **3a.** Once compiled you will be prompted "**To compile and deploy libraries, please run: `yarn hardhat deploy-zksync:libraries --private-key <PRIVATE_KEY>`**"
 
    ```
-   yarn hardhat deploy-zksync:libraries --private-key <PRIVATE_KEY> --network zkSync-goerli
+   yarn hardhat deploy-zksync:libraries --compile-all-contract --private-key <PRIVATE_KEY> --network zkSync-goerli
    ```
 
 - **3b.** Once deployed add deployed library output from console to HardHat configuration in the `libraries {}` field under `zksolc`:

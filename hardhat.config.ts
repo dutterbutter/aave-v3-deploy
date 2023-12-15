@@ -50,31 +50,30 @@ export default {
         mode: "3",
       },
       libraries: {
-        // @zkSync: These are deployed addresses on zkSync Goerli
         // TODO: need to update these addresses with the correct ones later
         "@aave/core-v3/contracts/protocol/libraries/logic/ConfiguratorLogic.sol": {
-          "ConfiguratorLogic": "0xe24eA68C46fe765E030Bc14baFa087a865d389a6"
+          "ConfiguratorLogic": "0x96038Fd1df6fE190717356E5531017ba7662c048"
         },
         "@aave/core-v3/contracts/protocol/libraries/logic/PoolLogic.sol": {
-          "PoolLogic": "0x670eFBdFa365A8de51a72447837226852E53fe43"
+          "PoolLogic": "0x2178368114dB20b34a5855f9886Ef67F434Cbe1E"
         },
         "@aave/core-v3/contracts/protocol/libraries/logic/BridgeLogic.sol": {
-          "BridgeLogic": "0x10079a3854039F10E071bB3f054D463568EAC317"
+          "BridgeLogic": "0x6BEB7D5416b1A2bb8619e988785676c0aEdde7b8"
         },
         "@aave/core-v3/contracts/protocol/libraries/logic/SupplyLogic.sol": {
-          "SupplyLogic": "0x0c950296714AB383ff4D478262863204a5d4788e"
+          "SupplyLogic": "0x399cbB44Ca197aa95302994Ff1Ee42320fd9f1Dd"
         },
         "@aave/core-v3/contracts/protocol/libraries/logic/BorrowLogic.sol": {
-          "BorrowLogic": "0xF65f7A0F52B921e18Ff8e25f14AEAB3978f8fBdB"
+          "BorrowLogic": "0x605b5F24d819dfdE7BEAD870C6b015C6CA90cDad"
         },
         "@aave/core-v3/contracts/protocol/libraries/logic/FlashLoanLogic.sol": {
-          "FlashLoanLogic": "0x6B6025aCFfbc5306FA61cB8708b589baBCb7658e"
+          "FlashLoanLogic": "0x27d45764490b8C4135d1EC70130163791BDE6db5"
         },
         "@aave/core-v3/contracts/protocol/libraries/logic/EModeLogic.sol": {
-          "EModeLogic": "0x9cfD416c110A3CE6E7c40AB63965EA0a5553aa7c"
+          "EModeLogic": "0xf98633DD7a7AF38A3dA2C7fc34F1a7A3A14A26b9"
         },
         "@aave/core-v3/contracts/protocol/libraries/logic/LiquidationLogic.sol": {
-          "LiquidationLogic": "0xC25F04991577522ef546218606E8a35a565bCDA2"
+          "LiquidationLogic": "0xD2402B71681AE96C9D013b8106A73e38504E676A"
         }
       },
     },
@@ -82,10 +81,9 @@ export default {
   solidity: {
     compilers: [
       {
-        version: "0.8.10",
+        version: "0.8.20",
         settings: {
           optimizer: { enabled: true, runs: 100_000 },
-          evmVersion: "berlin",
         },
       },
       {

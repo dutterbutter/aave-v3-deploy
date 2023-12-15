@@ -22,8 +22,8 @@
   "main": "dist/helpers/index.js",
   "devDependencies": {
     "@aave/aave-token": "^1.0.4",
-    "@aave/core-v3": "^1.19.0",
-    "@aave/periphery-v3": "^2.4.1",
+    "@aave/core-v3": "github:aave/aave-v3-core#v1.19.2",
+    "@aave/periphery-v3": "github:aave/aave-v3-periphery#v2.5.0",
     "@aave/safety-module": "^1.0.3",
     "@matterlabs/hardhat-zksync-deploy": "^0.6.6",
     "@matterlabs/hardhat-zksync-solc": "^1.0.4",
