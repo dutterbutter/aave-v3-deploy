@@ -6,6 +6,7 @@ import {
   hardhatNetworkSettings,
   loadTasks,
 } from "./helpers/hardhat-config-helpers";
+import { HardhatUserConfig } from "hardhat/config";
 import {
   eArbitrumNetwork,
   eAvalancheNetwork,
@@ -35,7 +36,7 @@ if (!SKIP_LOAD) {
   loadTasks(TASK_FOLDERS);
 }
 
-export default {
+export const config = {
   contractSizer: {
     alphaSort: true,
     runOnCompile: false,
@@ -44,38 +45,37 @@ export default {
   zksolc: {
     version: "latest",
     settings: {
-      forceEvmla: true,
+      forceEvmla: false,
       optimizer: {
         enabled: true,
         mode: "3",
       },
       libraries: {
-        // TODO: need to update these addresses with the correct ones later
-        "@aave/core-v3/contracts/protocol/libraries/logic/ConfiguratorLogic.sol": {
-          "ConfiguratorLogic": "0x96038Fd1df6fE190717356E5531017ba7662c048"
-        },
-        "@aave/core-v3/contracts/protocol/libraries/logic/PoolLogic.sol": {
-          "PoolLogic": "0x2178368114dB20b34a5855f9886Ef67F434Cbe1E"
-        },
-        "@aave/core-v3/contracts/protocol/libraries/logic/BridgeLogic.sol": {
-          "BridgeLogic": "0x6BEB7D5416b1A2bb8619e988785676c0aEdde7b8"
-        },
-        "@aave/core-v3/contracts/protocol/libraries/logic/SupplyLogic.sol": {
-          "SupplyLogic": "0x399cbB44Ca197aa95302994Ff1Ee42320fd9f1Dd"
-        },
-        "@aave/core-v3/contracts/protocol/libraries/logic/BorrowLogic.sol": {
-          "BorrowLogic": "0x605b5F24d819dfdE7BEAD870C6b015C6CA90cDad"
-        },
-        "@aave/core-v3/contracts/protocol/libraries/logic/FlashLoanLogic.sol": {
-          "FlashLoanLogic": "0x27d45764490b8C4135d1EC70130163791BDE6db5"
-        },
-        "@aave/core-v3/contracts/protocol/libraries/logic/EModeLogic.sol": {
-          "EModeLogic": "0xf98633DD7a7AF38A3dA2C7fc34F1a7A3A14A26b9"
-        },
-        "@aave/core-v3/contracts/protocol/libraries/logic/LiquidationLogic.sol": {
-          "LiquidationLogic": "0xD2402B71681AE96C9D013b8106A73e38504E676A"
-        }
-      },
+            "@aave/core-v3/contracts/protocol/libraries/logic/ConfiguratorLogic.sol": {
+              "ConfiguratorLogic": "0x55C9400Ef6e7779433Dd4c5a0Cdb9514E5f43f96"
+            },
+            "@aave/core-v3/contracts/protocol/libraries/logic/PoolLogic.sol": {
+              "PoolLogic": "0x35938C70af13d0c3bBb4e852A9Ab10B20797AeD5"
+            },
+            "@aave/core-v3/contracts/protocol/libraries/logic/BridgeLogic.sol": {
+              "BridgeLogic": "0x23b13d016E973C9915c6252271fF06cCA2098885"
+            },
+            "@aave/core-v3/contracts/protocol/libraries/logic/SupplyLogic.sol": {
+              "SupplyLogic": "0x04FaEd9dCb8d7731d89fe94eb3cc8a29E0e10204"
+            },
+            "@aave/core-v3/contracts/protocol/libraries/logic/BorrowLogic.sol": {
+              "BorrowLogic": "0x9c1a3d7C98dBF89c7f5d167F2219C29c2fe775A7"
+            },
+            "@aave/core-v3/contracts/protocol/libraries/logic/FlashLoanLogic.sol": {
+              "FlashLoanLogic": "0xCeAB1fc2693930bbad33024D270598c620D7A52B"
+            },
+            "@aave/core-v3/contracts/protocol/libraries/logic/EModeLogic.sol": {
+              "EModeLogic": "0x99E12239CBf8112fBB3f7Fd473d0558031abcbb5"
+            },
+            "@aave/core-v3/contracts/protocol/libraries/logic/LiquidationLogic.sol": {
+              "LiquidationLogic": "0xaAF5f437fB0524492886fbA64D703df15BF619AE"
+            }
+          },
     },
   },
   solidity: {
@@ -86,12 +86,12 @@ export default {
           optimizer: { enabled: true, runs: 100_000 },
         },
       },
-      {
-        version: "0.7.5",
-        settings: {
-          optimizer: { enabled: true, runs: 100_000 },
-        },
-      },
+      // {
+      //   version: "0.7.5",
+      //   settings: {
+      //     optimizer: { enabled: true, runs: 100_000 },
+      //   },
+      // },
     ],
   },
   typechain: {
@@ -243,9 +243,9 @@ export default {
       "@aave/periphery-v3/contracts/treasury/AaveEcosystemReserveController.sol",
       "@aave/periphery-v3/contracts/adapters/paraswap/ParaSwapLiquiditySwapAdapter.sol",
       "@aave/periphery-v3/contracts/adapters/paraswap/ParaSwapRepayAdapter.sol",
-      "@aave/safety-module/contracts/stake/StakedAave.sol",
-      "@aave/safety-module/contracts/stake/StakedAaveV2.sol",
-      "@aave/safety-module/contracts/proposals/extend-stkaave-distribution/StakedTokenV2Rev3.sol",
+      // "@aave/safety-module/contracts/stake/StakedAave.sol",
+      // "@aave/safety-module/contracts/stake/StakedAaveV2.sol",
+      // "@aave/safety-module/contracts/proposals/extend-stkaave-distribution/StakedTokenV2Rev3.sol",
     ],
   },
   deterministicDeployment: DETERMINISTIC_DEPLOYMENT
@@ -255,3 +255,5 @@ export default {
     apiKey: ETHERSCAN_KEY,
   },
 };
+
+export default config;

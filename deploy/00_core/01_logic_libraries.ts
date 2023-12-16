@@ -2,6 +2,8 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
 import { COMMON_DEPLOY_PARAMS } from "../../helpers/env";
 
+// @zkSync: These libraries are already deployed
+// See hardhat.config.ts for the deployment addresses
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
