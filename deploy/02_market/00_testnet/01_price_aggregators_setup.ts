@@ -21,14 +21,23 @@ import {
 } from "../../../helpers/constants";
 import Bluebird from "bluebird";
 import { MARKET_NAME } from "../../../helpers/env";
+import {
+  setupZkDeployer,
+  isZkSyncNetwork,
+  deployContract,
+} from "../../../helpers/utilities/zkDeployer";
+import * as hre from "hardhat";
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
-  ...hre
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
+  // @zkSync
+  const isZkSync = isZkSyncNetwork(hre);
+  const zkDeployer = isZkSync ? setupZkDeployer() : null;
+
   const poolConfig = await loadPoolConfig(MARKET_NAME as ConfigNames);
   const network = (
     process.env.FORK ? process.env.FORK : hre.network.name
@@ -57,12 +66,26 @@ const func: DeployFunction = async function ({
     if (!price) {
       throw `[ERROR] Missing mock price for asset ${symbol} at MOCK_CHAINLINK_AGGREGATORS_PRICES constant located at src/constants.ts`;
     }
-    await deploy(`${symbol}${TESTNET_PRICE_AGGR_PREFIX}`, {
-      args: [price],
-      from: deployer,
-      ...COMMON_DEPLOY_PARAMS,
-      contract: "MockAggregator",
-    });
+
+    if (isZkSync && zkDeployer) {
+      const {
+        artifact: mockAggregatorArtifact,
+        deployedInstance: mockAggregatorInstance,
+      } = await deployContract(
+        zkDeployer,
+        deployments,
+        "MockAggregator",
+        [price],
+        `${symbol}${TESTNET_PRICE_AGGR_PREFIX}`
+      );
+    } else {
+      await deploy(`${symbol}${TESTNET_PRICE_AGGR_PREFIX}`, {
+        args: [price],
+        from: deployer,
+        ...COMMON_DEPLOY_PARAMS,
+        contract: "MockAggregator",
+      });
+    }
   });
 
   return true;
