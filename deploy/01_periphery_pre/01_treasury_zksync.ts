@@ -1,7 +1,6 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
-import { Wallet, Provider } from "zksync-web3";
+import { setupZkDeployer } from "../../helpers/utilities/zkDeployer";
 import { POOL_ADMIN } from "./../../helpers/constants";
 import { getProxyImplementationBySlot } from "./../../helpers/utilities/tx";
 import { getFirstSigner } from "./../../helpers/utilities/signer";
@@ -31,9 +30,6 @@ import {
 } from "../../typechain";
 import { getAddress } from "ethers/lib/utils";
 import * as hre from "hardhat";
-require("dotenv").config();
-
-const wallet_key = process.env.LOCAL_PRIVATE_KEY || "";
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
@@ -43,9 +39,7 @@ const func: DeployFunction = async function ({
   const { deployer: deployerAddress } = await getNamedAccounts();
   const { save } = deployments;
   // Set up deployer wallet for zkSync
-  const provider = new Provider(`http://127.0.0.1:8011`);
-  const deployerWallet = new Wallet(wallet_key, provider);
-  const zkDeployer = new Deployer(hre, deployerWallet);
+  const zkDeployer = setupZkDeployer();
 
   const { ReserveFactorTreasuryAddress } = await loadPoolConfig(MARKET_NAME);
 
@@ -72,25 +66,28 @@ const func: DeployFunction = async function ({
       address: treasuryAddress,
       abi: InitializableAdminUpgradeabilityProxy__factory.abi,
     });
+    console.log("TREASURY_PROXY_ID saved!")
     await save(TREASURY_CONTROLLER_ID, {
       address: controller,
       abi: AaveEcosystemReserveController__factory.abi,
     });
+    console.log("TREASURY_CONTROLLER_ID saved!")
     await save(TREASURY_IMPL_ID, {
       address: impl,
       abi: AaveEcosystemReserveV2__factory.abi,
     });
-
+    console.log("TREASURY_IMPL_ID saved!")
     return true;
   }
 
+  // @zkSync TODO: Not using deployContract helper here as it seems
+  // we are saving the proxy address and not the implementation address.
   // Deploy Treasury proxy
   const upgradeabilityProxyArtifact = await zkDeployer.loadArtifact(
     "InitializableAdminUpgradeabilityProxy"
   );
-  console.log("treasuryProxy")
   const treasuryProxyArtifact = await zkDeployer.deploy(upgradeabilityProxyArtifact, []);
-  console.log("TreasuryProxy deployed::", treasuryProxyArtifact.address)
+  console.log("TreasuryProxy deployed:", treasuryProxyArtifact.address)
 
   // Deploy Treasury Controller
   const aaveEcosystemReserveControllerArtifact = await zkDeployer.loadArtifact(
@@ -100,15 +97,14 @@ const func: DeployFunction = async function ({
   const treasuryController = await zkDeployer.deploy(aaveEcosystemReserveControllerArtifact, [
       treasuryOwner
   ]);
-  console.log("TreasuryImpl deployed::", treasuryController.address)
+  console.log("TreasuryImpl deployed:", treasuryController.address)
 
   // Deploy Treasury implementation and initialize proxy
   const aaveEcosystemReserveV2Artifact = await zkDeployer.loadArtifact(
     "AaveEcosystemReserveV2"
   );
-  // Understand purpose of TREASURY_CONTROLLER_ID
   const treasuryImplArtifact = await zkDeployer.deploy(aaveEcosystemReserveV2Artifact, []);
-  console.log("TreasuryImpl deployed::", treasuryImplArtifact.address)
+  console.log("TreasuryImpl deployed:", treasuryImplArtifact.address)
 
   const treasuryImpl = (await hre.ethers.getContractAt(
     aaveEcosystemReserveV2Artifact.abi,

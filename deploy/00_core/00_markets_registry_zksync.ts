@@ -1,12 +1,8 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
-import { Wallet, Provider } from "zksync-web3";
+import { setupZkDeployer, deployContract } from "../../helpers/utilities/zkDeployer";
 import { waitForTx } from "../../helpers/utilities/tx";
 import * as hre from "hardhat";
-require("dotenv").config();
-
-const wallet_key = process.env.LOCAL_PRIVATE_KEY || "";
 // @zkSync: This correctly deploys and transfers ownership of the registry contract
 // TODO: Abstract out the deployer wallet and zkDeployer into a helper function
 // TODO: Merge this with the deploy/00_core/00_markets_registry.ts file
@@ -17,22 +13,24 @@ const func: DeployFunction = async function ({
 }: HardhatRuntimeEnvironment) {
   const { deployer: deployerAddress, addressesProviderRegistryOwner } =
     await getNamedAccounts();
-  // Set up deployer wallet
-  const provider = new Provider(`http://127.0.0.1:8011`);
-  const deployerWallet = new Wallet(wallet_key, provider);
-  const zkDeployer = new Deployer(hre, deployerWallet);
+  const { save } = deployments;
+  // Set up zkSync Deployer
+  const zkDeployer = setupZkDeployer();
 
-  const registryArtifact = await zkDeployer.loadArtifact(
+  // Deploy PoolAddressesProviderRegistry
+  // Save the deployment to the deployments folder
+  const { artifact: registryArtifact, deployedInstance: registryInstance } = await deployContract(
+    zkDeployer,
+    deployments,
+    "PoolAddressesProviderRegistry",
+    [deployerAddress],
     "PoolAddressesProviderRegistry"
   );
-  const registryInstance = await zkDeployer.deploy(registryArtifact, [
-    deployerAddress,
-  ]);
 
   const registryContract = new ethers.Contract(
     registryInstance.address,
     registryArtifact.abi,
-    deployerWallet
+    zkDeployer.zkWallet
   );
 
   await waitForTx(
