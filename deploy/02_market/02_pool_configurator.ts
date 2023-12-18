@@ -33,7 +33,7 @@ const func: DeployFunction = async function ({
   let poolConfiguratorInstance: any;
   if (isZkSync && zkDeployer) {
     // Deploy PoolConfigurator implementation
-  ({ deployedInstance: poolConfiguratorInstance } = await deployContract(
+    ({ deployedInstance: poolConfiguratorInstance } = await deployContract(
       zkDeployer,
       deployments,
       "PoolConfigurator",
@@ -49,11 +49,13 @@ const func: DeployFunction = async function ({
         ConfiguratorLogic: configuratorLogicArtifact.address,
       },
       ...COMMON_DEPLOY_PARAMS,
-    });  
+    });
   }
 
   // Initialize implementation
-  const poolConfig = await getPoolConfiguratorProxy(poolConfiguratorInstance.address);
+  const poolConfig = await getPoolConfiguratorProxy(
+    poolConfiguratorInstance.address
+  );
   await waitForTx(await poolConfig.initialize(addressesProviderAddress));
   console.log("Initialized PoolConfigurator Implementation");
 
@@ -74,7 +76,7 @@ const func: DeployFunction = async function ({
       contract: "ReservesSetupHelper",
     });
   }
-  
+
   return true;
 };
 

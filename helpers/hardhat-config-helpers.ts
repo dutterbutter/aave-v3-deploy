@@ -49,7 +49,7 @@ export const getAlchemyKey = (net: eNetwork) => {
       return process.env.GOERLI_ALCHEMY_KEY || ALCHEMY_KEY;
     case eEthereumNetwork.sepolia:
       return process.env.SEPOLIA_ALCHEMY_KEY || ALCHEMY_KEY;
-    // @zkSync networks not supported by Alchemy; use QuickNode instead 
+    // @zkSync networks not supported by Alchemy; use QuickNode instead
     case ezkSyncNetwork.zkSyncGoerli:
       return process.env.ZKSYNC_GOERLI_QUICK_NODE_KEY || QUICK_NODE_KEY;
     case ezkSyncNetwork.zkSyncSepolia:
@@ -171,7 +171,7 @@ export const getCommonNetworkConfig = (
 });
 
 // @zkSync used to determine the correct L1 eth network for zkSync HH config
-export const determineEthNetworkForZkSync = (networkName: eNetwork,) => {
+export const determineEthNetworkForZkSync = (networkName: eNetwork) => {
   let ethNetworkValue = "mainnet";
 
   if (networkName.includes("zkSync")) {
@@ -183,8 +183,7 @@ export const determineEthNetworkForZkSync = (networkName: eNetwork,) => {
   }
 
   return ethNetworkValue;
-}
-
+};
 
 const MNEMONICS: iParamsPerNetwork<string> = {
   [eAvalancheNetwork.fuji]: process.env.FUJI_MNEMONIC,

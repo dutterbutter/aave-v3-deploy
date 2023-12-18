@@ -1,11 +1,15 @@
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 import { Wallet, Provider } from "zksync-web3";
 import { DeploymentsExtension } from "hardhat-deploy/types";
-const fs = require("fs").promises;
-const path = require("path");
 import * as hre from "hardhat";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 require("dotenv").config();
+const fs = require("fs").promises;
+const path = require("path");
+
+// CONSTANTS
+const MNEMONIC = process.env.MNEMONIC || "";
+const RPC_URL = process.env.RPC_URL || "";
 
 /**
  * Determines if the current network is zkSync.
@@ -13,18 +17,17 @@ require("dotenv").config();
  * @returns {boolean} - True if the network is zkSync, false otherwise.
  */
 export function isZkSyncNetwork(hre: HardhatRuntimeEnvironment): boolean {
-    return hre.network.name.includes('zkSync');
+  return hre.network.name.includes("zkSync");
 }
 
 /**
  * Sets up and returns a zkSync Deployer instance.
  * @returns {Deployer} zkDeployer instance.
  */
-// @zkSync: TODO: update to make URL configurable
 export function setupZkDeployer(): Deployer {
-  const walletKey = process.env.LOCAL_PRIVATE_KEY || "";
-  const provider = new Provider(`http://127.0.0.1:8011`);
-  const deployerWallet = new Wallet(walletKey, provider);
+  const provider = new Provider(RPC_URL);
+  const deployerWallet = Wallet.fromMnemonic(MNEMONIC).connect(provider);
+
   return new Deployer(hre, deployerWallet);
 }
 
@@ -48,13 +51,7 @@ export async function deployContract(
   const artifact = await zkDeployer.loadArtifact(artifactName);
   const deployedInstance = await zkDeployer.deploy(artifact, constructorArgs);
 
-  console.info(
-    "Deployed",
-    artifactName,
-    "at: ",
-    deployedInstance.address,
-    "\n"
-  );
+  console.info("Deployed", saveName, "at: ", deployedInstance.address, "\n");
 
   // Save the deployment information
   await deployments.save(saveName, {
@@ -93,15 +90,36 @@ export async function getContractABI(contractName: string) {
  * Retrieves the contract address from the Hardhat configuration.
  * @param {HardhatRuntimeEnvironment} hre - The Hardhat Runtime Environment.
  * @param {string} contractName - The name of the contract.
- * @returns {string | undefined} - The address of the contract, or undefined if not found.
+ * @returns {string} - The address of the contract.
+ * @throws {Error} - Throws an error if the zksolc configuration is not defined or the address is not found.
  */
-export function getContractAddress(hre: HardhatRuntimeEnvironment, contractName: string): string | undefined {
-    // Accessing the libraries directly from the Hardhat config
-    const libraries = hre.config.zksolc?.settings?.libraries;
-  
-    // Construct the contract path
-    const contractPath = `@aave/core-v3/contracts/protocol/libraries/logic/${contractName}.sol`;
-  
-    // Return the address if it exists, otherwise undefined
-    return libraries?.[contractPath]?.[contractName];
+export function getContractAddress(
+  hre: HardhatRuntimeEnvironment,
+  contractName: string
+): string {
+  // Check if zksolc is defined in the Hardhat config
+  if (
+    !hre.config.zksolc ||
+    !hre.config.zksolc.settings ||
+    !hre.config.zksolc.settings.libraries
+  ) {
+    throw new Error(
+      "zksolc settings or libraries are not defined in the Hardhat config."
+    );
+  }
+
+  const libraries = hre.config.zksolc.settings.libraries;
+
+  // Construct the contract path
+  const contractPath = `@aave/core-v3/contracts/protocol/libraries/logic/${contractName}.sol`;
+
+  // Return the address if it exists, otherwise throw an error
+  const address = libraries[contractPath]?.[contractName];
+  if (!address) {
+    throw new Error(
+      `Address for contract ${contractName} not found in the Hardhat configuration.`
+    );
+  }
+
+  return address;
 }

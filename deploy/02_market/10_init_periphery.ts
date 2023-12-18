@@ -23,7 +23,7 @@ import { is } from "bluebird";
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
-  deployments
+  deployments,
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
@@ -50,11 +50,12 @@ const func: DeployFunction = async function ({
     } else {
       await deploy("MockFlashLoanReceiver", {
         from: deployer,
-        args: [await (await deployments.get(POOL_ADDRESSES_PROVIDER_ID)).address],
+        args: [
+          await (await deployments.get(POOL_ADDRESSES_PROVIDER_ID)).address,
+        ],
         ...COMMON_DEPLOY_PARAMS,
       });
     }
-
   }
 
   return true;

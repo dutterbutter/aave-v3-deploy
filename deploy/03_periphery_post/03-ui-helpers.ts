@@ -15,7 +15,7 @@ import * as hre from "hardhat";
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
-  deployments
+  deployments,
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
@@ -23,7 +23,7 @@ const func: DeployFunction = async function ({
   // @zkSync
   const isZkSync = isZkSyncNetwork(hre);
   const zkDeployer = isZkSync ? setupZkDeployer() : null;
-  
+
   const network = (
     process.env.FORK ? process.env.FORK : hre.network.name
   ) as eNetwork;
@@ -35,7 +35,7 @@ const func: DeployFunction = async function ({
     return;
   }
 
-  if (isZkSync && zkDeployer) { 
+  if (isZkSync && zkDeployer) {
     // Deploy UiIncentiveDataProvider getter helper
     await deployContract(
       zkDeployer,

@@ -42,7 +42,7 @@ const func: DeployFunction = async function ({
   // @zkSync
   const isZkSync = isZkSyncNetwork(hre);
   const zkDeployer = isZkSync ? setupZkDeployer() : null;
-  
+
   const poolConfig = await loadPoolConfig(MARKET_NAME as ConfigNames);
   const network = (
     process.env.FORK ? process.env.FORK : hre.network.name

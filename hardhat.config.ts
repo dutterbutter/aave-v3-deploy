@@ -6,7 +6,6 @@ import {
   hardhatNetworkSettings,
   loadTasks,
 } from "./helpers/hardhat-config-helpers";
-import { HardhatUserConfig } from "hardhat/config";
 import {
   eArbitrumNetwork,
   eAvalancheNetwork,
@@ -51,30 +50,6 @@ export const config = {
         mode: "3",
       },
       libraries: {
-            "@aave/core-v3/contracts/protocol/libraries/logic/BridgeLogic.sol": {
-              "BridgeLogic": "0x9c1a3d7C98dBF89c7f5d167F2219C29c2fe775A7"
-            },
-            "@aave/core-v3/contracts/protocol/libraries/logic/SupplyLogic.sol": {
-              "SupplyLogic": "0xCeAB1fc2693930bbad33024D270598c620D7A52B"
-            },
-            "@aave/core-v3/contracts/protocol/libraries/logic/BorrowLogic.sol": {
-              "BorrowLogic": "0x99E12239CBf8112fBB3f7Fd473d0558031abcbb5"
-            },
-            "@aave/core-v3/contracts/protocol/libraries/logic/FlashLoanLogic.sol": {
-              "FlashLoanLogic": "0xaAF5f437fB0524492886fbA64D703df15BF619AE"
-            },
-            "@aave/core-v3/contracts/protocol/libraries/logic/LiquidationLogic.sol": {
-              "LiquidationLogic": "0x23b13d016E973C9915c6252271fF06cCA2098885"
-            },
-            "@aave/core-v3/contracts/protocol/libraries/logic/EModeLogic.sol": {
-              "EModeLogic": "0x35938C70af13d0c3bBb4e852A9Ab10B20797AeD5"
-            },
-            "@aave/core-v3/contracts/protocol/libraries/logic/PoolLogic.sol": {
-              "PoolLogic": "0x04FaEd9dCb8d7731d89fe94eb3cc8a29E0e10204"
-            },
-            "@aave/core-v3/contracts/protocol/libraries/logic/ConfiguratorLogic.sol": {
-              "ConfiguratorLogic": "0x55C9400Ef6e7779433Dd4c5a0Cdb9514E5f43f96"
-            }
           },
     },
   },
@@ -86,12 +61,6 @@ export const config = {
           optimizer: { enabled: true, runs: 100_000 },
         },
       },
-      // {
-      //   version: "0.7.5",
-      //   settings: {
-      //     optimizer: { enabled: true, runs: 100_000 },
-      //   },
-      // },
     ],
   },
   typechain: {
@@ -243,9 +212,9 @@ export const config = {
       "@aave/periphery-v3/contracts/treasury/AaveEcosystemReserveController.sol",
       "@aave/periphery-v3/contracts/adapters/paraswap/ParaSwapLiquiditySwapAdapter.sol",
       "@aave/periphery-v3/contracts/adapters/paraswap/ParaSwapRepayAdapter.sol",
-      // "@aave/safety-module/contracts/stake/StakedAave.sol",
-      // "@aave/safety-module/contracts/stake/StakedAaveV2.sol",
-      // "@aave/safety-module/contracts/proposals/extend-stkaave-distribution/StakedTokenV2Rev3.sol",
+      "@aave/safety-module/contracts/stake/StakedAave.sol",
+      "@aave/safety-module/contracts/stake/StakedAaveV2.sol",
+      "@aave/safety-module/contracts/proposals/extend-stkaave-distribution/StakedTokenV2Rev3.sol",
     ],
   },
   deterministicDeployment: DETERMINISTIC_DEPLOYMENT

@@ -21,7 +21,7 @@ import { is } from "bluebird";
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
-  deployments
+  deployments,
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
@@ -75,13 +75,13 @@ const func: DeployFunction = async function ({
       ...COMMON_DEPLOY_PARAMS,
       args: [addressesProvider, paraswapAugustusRegistry, poolAdmin],
     });
-  
+
     await deploy("ParaSwapRepayAdapter", {
       from: deployer,
       ...COMMON_DEPLOY_PARAMS,
       args: [addressesProvider, paraswapAugustusRegistry, poolAdmin],
     });
-  
+
     return true;
   }
 };

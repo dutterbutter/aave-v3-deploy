@@ -31,14 +31,14 @@ import * as hre from "hardhat";
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
-  deployments
+  deployments,
 }: HardhatRuntimeEnvironment) {
   const { save, deploy } = deployments;
   const { deployer } = await getNamedAccounts();
   // @zkSync
   const isZkSync = isZkSyncNetwork(hre);
   const zkDeployer = isZkSync ? setupZkDeployer() : null;
-  
+
   const poolConfig = await loadPoolConfig(MARKET_NAME as ConfigNames);
 
   const proxyArtifact = await deployments.getExtendedArtifact(
@@ -110,7 +110,6 @@ const func: DeployFunction = async function ({
   });
 
   if (isL2PoolSupported(poolConfig)) {
-
     if (isZkSync && zkDeployer) {
       // Deploy L2 Encoder
       await deployContract(

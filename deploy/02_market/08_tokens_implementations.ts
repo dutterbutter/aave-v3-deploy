@@ -27,7 +27,7 @@ import * as hre from "hardhat";
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
-  deployments
+  deployments,
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
@@ -48,19 +48,14 @@ const func: DeployFunction = async function ({
   const poolAddress = await addressesProviderInstance.getPool();
 
   if (isZkSync && zkDeployer) {
-
-    const {
-      artifact: aTokenArtifact,
-      deployedInstance: aTokenInstance,
-    } = await deployContract(
-      zkDeployer,
-      deployments,
-      "AToken",
-      [
-        poolAddress
-      ],
-      ATOKEN_IMPL_ID
-    ); 
+    const { artifact: aTokenArtifact, deployedInstance: aTokenInstance } =
+      await deployContract(
+        zkDeployer,
+        deployments,
+        "AToken",
+        [poolAddress],
+        ATOKEN_IMPL_ID
+      );
 
     const aToken = aTokenInstance as AToken;
     await waitForTx(
@@ -83,13 +78,12 @@ const func: DeployFunction = async function ({
       zkDeployer,
       deployments,
       "DelegationAwareAToken",
-      [
-        poolAddress
-      ],
+      [poolAddress],
       DELEGATION_AWARE_ATOKEN_IMPL_ID
-    ); 
-    
-    const delegationAwareAToken = delegationAwareATokenInstance as DelegationAwareAToken;
+    );
+
+    const delegationAwareAToken =
+      delegationAwareATokenInstance as DelegationAwareAToken;
     await waitForTx(
       await delegationAwareAToken.initialize(
         poolAddress, // initializingPool
@@ -102,7 +96,7 @@ const func: DeployFunction = async function ({
         "0x00" // params
       )
     );
-    
+
     const {
       artifact: stableDebtTokenArtifact,
       deployedInstance: stableDebtTokenInstance,
@@ -110,9 +104,7 @@ const func: DeployFunction = async function ({
       zkDeployer,
       deployments,
       "StableDebtToken",
-      [
-        poolAddress
-      ],
+      [poolAddress],
       STABLE_DEBT_TOKEN_IMPL_ID
     );
 
@@ -136,9 +128,7 @@ const func: DeployFunction = async function ({
       zkDeployer,
       deployments,
       "VariableDebtToken",
-      [
-        poolAddress
-      ],
+      [poolAddress],
       VARIABLE_DEBT_TOKEN_IMPL_ID
     );
 
@@ -154,18 +144,16 @@ const func: DeployFunction = async function ({
         "0x00" // params
       )
     );
-  
+
     return true;
-
   } else {
-
     const aTokenArtifact = await deploy(ATOKEN_IMPL_ID, {
       contract: "AToken",
       from: deployer,
       args: [poolAddress],
       ...COMMON_DEPLOY_PARAMS,
     });
-  
+
     const aToken = (await hre.ethers.getContractAt(
       aTokenArtifact.abi,
       aTokenArtifact.address
@@ -182,7 +170,7 @@ const func: DeployFunction = async function ({
         "0x00" // params
       )
     );
-  
+
     const delegationAwareATokenArtifact = await deploy(
       DELEGATION_AWARE_ATOKEN_IMPL_ID,
       {
@@ -192,7 +180,7 @@ const func: DeployFunction = async function ({
         ...COMMON_DEPLOY_PARAMS,
       }
     );
-  
+
     const delegationAwareAToken = (await hre.ethers.getContractAt(
       delegationAwareATokenArtifact.abi,
       delegationAwareATokenArtifact.address
@@ -209,14 +197,14 @@ const func: DeployFunction = async function ({
         "0x00" // params
       )
     );
-  
+
     const stableDebtTokenArtifact = await deploy(STABLE_DEBT_TOKEN_IMPL_ID, {
       contract: "StableDebtToken",
       from: deployer,
       args: [poolAddress],
       ...COMMON_DEPLOY_PARAMS,
     });
-  
+
     const stableDebtToken = (await hre.ethers.getContractAt(
       stableDebtTokenArtifact.abi,
       stableDebtTokenArtifact.address
@@ -232,14 +220,17 @@ const func: DeployFunction = async function ({
         "0x00" // params
       )
     );
-  
-    const variableDebtTokenArtifact = await deploy(VARIABLE_DEBT_TOKEN_IMPL_ID, {
-      contract: "VariableDebtToken",
-      from: deployer,
-      args: [poolAddress],
-      ...COMMON_DEPLOY_PARAMS,
-    });
-  
+
+    const variableDebtTokenArtifact = await deploy(
+      VARIABLE_DEBT_TOKEN_IMPL_ID,
+      {
+        contract: "VariableDebtToken",
+        from: deployer,
+        args: [poolAddress],
+        ...COMMON_DEPLOY_PARAMS,
+      }
+    );
+
     const variableDebtToken = (await hre.ethers.getContractAt(
       variableDebtTokenArtifact.abi,
       variableDebtTokenArtifact.address
@@ -255,9 +246,8 @@ const func: DeployFunction = async function ({
         "0x00" // params
       )
     );
-  
-    return true;
 
+    return true;
   }
 };
 

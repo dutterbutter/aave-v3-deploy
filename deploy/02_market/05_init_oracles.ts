@@ -40,7 +40,7 @@ import * as hre from "hardhat";
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
-  deployments
+  deployments,
 }: HardhatRuntimeEnvironment) {
   const { deployer } = await getNamedAccounts();
   // @zkSync

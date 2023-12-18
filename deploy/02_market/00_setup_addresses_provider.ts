@@ -78,9 +78,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       ["0", zkDeployer.zkWallet.address],
       POOL_ADDRESSES_PROVIDER_ID
     );
-    
+
     const signer = await hre.ethers.getSigner(zkDeployer.zkWallet.address);
-    const addressesProviderInstance = addressesProviderInst.connect(signer) as PoolAddressesProvider;
+    const addressesProviderInstance = addressesProviderInst.connect(
+      signer
+    ) as PoolAddressesProvider;
 
     // 2. Set the MarketId
     await waitForTx(

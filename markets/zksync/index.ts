@@ -59,6 +59,14 @@ export const zkSyncConfig: IAaveConfiguration = {
       WETH: ZERO_ADDRESS,
       USDT: ZERO_ADDRESS,
     },
+    [ezkSyncNetwork.zkSyncLocal]: {
+      DAI: ZERO_ADDRESS,
+      LINK: ZERO_ADDRESS,
+      USDC: ZERO_ADDRESS,
+      WBTC: ZERO_ADDRESS,
+      WETH: ZERO_ADDRESS,
+      USDT: ZERO_ADDRESS,
+    },
   },
   // @zkSync TODO: need to update these settings with the correct ones
   EModes: {

@@ -52,7 +52,10 @@ const func: DeployFunction = async function ({
   let poolInstance: any;
   if (isZkSync && zkDeployer) {
     // Deploy L2 libraries
-    const { artifact: calldataLogicLibraryArtifact, deployedInstance: calldataLogicLibrary } = await deployContract(
+    const {
+      artifact: calldataLogicLibraryArtifact,
+      deployedInstance: calldataLogicLibrary,
+    } = await deployContract(
       zkDeployer,
       deployments,
       "CalldataLogic",
@@ -77,7 +80,7 @@ const func: DeployFunction = async function ({
       // }
     ));
   } else {
-      // Deploy L2 libraries
+    // Deploy L2 libraries
     const calldataLogicLibrary = await deploy("CalldataLogic", {
       from: deployer,
     });
