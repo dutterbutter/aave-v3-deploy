@@ -8,15 +8,16 @@ import * as hre from "hardhat";
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
-  deployments,
-  ethers,
+  deployments
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer, addressesProviderRegistryOwner } = await getNamedAccounts();
 
-  if (isZkSyncNetwork(hre)) {
-    const zkDeployer = setupZkDeployer();
+  // @zkSync
+  const isZkSync = isZkSyncNetwork(hre);
+  const zkDeployer = isZkSync ? setupZkDeployer() : null;
 
+  if (isZkSync && zkDeployer) {
     // Deploy PoolAddressesProviderRegistry
     // Save the deployment to the deployments folder
     const { artifact: registryArtifact, deployedInstance: registryInstance } = await deployContract(
@@ -27,14 +28,8 @@ const func: DeployFunction = async function ({
       "PoolAddressesProviderRegistry"
     );
   
-    const registryContract = new ethers.Contract(
-      registryInstance.address,
-      registryArtifact.abi,
-      zkDeployer.zkWallet
-    );
-  
     await waitForTx(
-      await registryContract.transferOwnership(addressesProviderRegistryOwner)
+      await registryInstance.transferOwnership(addressesProviderRegistryOwner)
     );
   
     deployments.log(

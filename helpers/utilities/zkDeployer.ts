@@ -13,7 +13,7 @@ require("dotenv").config();
  * @returns {boolean} - True if the network is zkSync, false otherwise.
  */
 export function isZkSyncNetwork(hre: HardhatRuntimeEnvironment): boolean {
-    return hre.network.name.includes('zksync');
+    return hre.network.name.includes('zkSync');
 }
 
 /**
@@ -49,7 +49,7 @@ export async function deployContract(
   const deployedInstance = await zkDeployer.deploy(artifact, constructorArgs);
 
   console.info(
-    "\nDeployed",
+    "Deployed",
     artifactName,
     "at: ",
     deployedInstance.address,
@@ -75,7 +75,7 @@ export async function getContractABI(contractName: string) {
     "artifacts-zk/@aave/core-v3/contracts/protocol/libraries/logic";
   const artifactPath = path.join(
     artifactsDir,
-    contractName,
+    `${contractName}.sol`,
     `${contractName}.json`
   );
 
@@ -91,22 +91,17 @@ export async function getContractABI(contractName: string) {
 
 /**
  * Retrieves the contract address from the Hardhat configuration.
+ * @param {HardhatRuntimeEnvironment} hre - The Hardhat Runtime Environment.
  * @param {string} contractName - The name of the contract.
- * @returns {Promise<string>} - The address of the contract.
+ * @returns {string | undefined} - The address of the contract, or undefined if not found.
  */
-export async function getContractAddress(contractName: string) {
-  const configPath = "../../hardhat.config.ts";
-
-  try {
-    const data = await fs.readFile(configPath, "utf-8");
-    const config = JSON.parse(data);
-    const libraries = config.zksolc.settings.libraries;
-
-    return libraries[
-      `@aave/core-v3/contracts/protocol/libraries/logic/${contractName}.sol`
-    ][contractName];
-  } catch (error) {
-    console.error("Error reading contract address:", error);
-    throw error;
-  }
+export function getContractAddress(hre: HardhatRuntimeEnvironment, contractName: string): string | undefined {
+    // Accessing the libraries directly from the Hardhat config
+    const libraries = hre.config.zksolc?.settings?.libraries;
+  
+    // Construct the contract path
+    const contractPath = `@aave/core-v3/contracts/protocol/libraries/logic/${contractName}.sol`;
+  
+    // Return the address if it exists, otherwise undefined
+    return libraries?.[contractPath]?.[contractName];
 }

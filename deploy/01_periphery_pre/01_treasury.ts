@@ -31,6 +31,7 @@ import { getAddress } from "ethers/lib/utils";
 import {
   setupZkDeployer,
   isZkSyncNetwork,
+  deployContract,
 } from "../../helpers/utilities/zkDeployer";
 import * as hre from "hardhat";
 /**
@@ -87,67 +88,64 @@ const func: DeployFunction = async function ({
     return true;
   }
 
-  if (isZkSyncNetwork(hre)) {
+  if (isZkSync && zkDeployer) {
     // @zkSync TODO: Not using deployContract helper here as it seems
     // we are saving the proxy address and not the implementation address.
     // Deploy Treasury proxy
-    if (zkDeployer) {
-      const upgradeabilityProxyArtifact = await zkDeployer.loadArtifact(
-        "InitializableAdminUpgradeabilityProxy"
-      );
-      const treasuryProxyArtifact = await zkDeployer.deploy(
-        upgradeabilityProxyArtifact,
-        []
-      );
-      console.log("TreasuryProxy deployed:", treasuryProxyArtifact.address);
 
-      // Deploy Treasury Controller
-      const aaveEcosystemReserveControllerArtifact =
-        await zkDeployer.loadArtifact("AaveEcosystemReserveController");
-      // Understand purpose of TREASURY_CONTROLLER_ID
-      const treasuryController = await zkDeployer.deploy(
-        aaveEcosystemReserveControllerArtifact,
-        [treasuryOwner]
-      );
-      console.log("TreasuryImpl deployed:", treasuryController.address);
+    const {
+      artifact: treasuryProxyArtifact,
+      deployedInstance: treasuryProxyInstance,
+    } = await deployContract(
+      zkDeployer,
+      deployments,
+      "InitializableAdminUpgradeabilityProxy",
+      [],
+      TREASURY_PROXY_ID
+    );
 
-      // Deploy Treasury implementation and initialize proxy
-      const aaveEcosystemReserveV2Artifact = await zkDeployer.loadArtifact(
-        "AaveEcosystemReserveV2"
-      );
-      const treasuryImplArtifact = await zkDeployer.deploy(
-        aaveEcosystemReserveV2Artifact,
-        []
-      );
-      console.log("TreasuryImpl deployed:", treasuryImplArtifact.address);
+    const {
+      artifact: treasuryControllerArtifact,
+      deployedInstance: treasuryControllerInstance,
+    } = await deployContract(
+      zkDeployer,
+      deployments,
+      "AaveEcosystemReserveController",
+      [treasuryOwner],
+      TREASURY_CONTROLLER_ID
+    );
 
-      const treasuryImpl = (await hre.ethers.getContractAt(
-        aaveEcosystemReserveV2Artifact.abi,
-        treasuryImplArtifact.address
-      )) as AaveEcosystemReserveV2;
+    const {
+      artifact: treasuryImplArtifact,
+      deployedInstance: treasuryImplInstance,
+    } = await deployContract(
+      zkDeployer,
+      deployments,
+      "AaveEcosystemReserveV2",
+      [],
+      TREASURY_IMPL_ID
+    );
 
-      // Call to initialize at implementation contract to prevent other calls.
-      await waitForTx(await treasuryImpl.initialize(ZERO_ADDRESS));
+    const treasuryImpl = treasuryImplInstance as AaveEcosystemReserveV2;
 
-      // Initialize proxy
-      const proxy = (await hre.ethers.getContractAt(
-        upgradeabilityProxyArtifact.abi,
-        treasuryProxyArtifact.address
-      )) as InitializableAdminUpgradeabilityProxy;
+    // Call to initialize at implementation contract to prevent other calls.
+    await waitForTx(await treasuryImpl.initialize(ZERO_ADDRESS));
 
-      const initializePayload = treasuryImpl.interface.encodeFunctionData(
-        "initialize",
-        [treasuryController.address]
-      );
+    const proxy =
+      treasuryProxyInstance as InitializableAdminUpgradeabilityProxy;
+    const initializePayload = treasuryImpl.interface.encodeFunctionData(
+      "initialize",
+      [treasuryControllerInstance.address]
+    );
 
-      await waitForTx(
-        await proxy["initialize(address,address,bytes)"](
-          treasuryImplArtifact.address,
-          treasuryOwner,
-          initializePayload
-        )
-      );
-    }
+    await waitForTx(
+      await proxy["initialize(address,address,bytes)"](
+        treasuryImplInstance.address,
+        treasuryOwner,
+        initializePayload
+      )
+    );
+    return true;
   } else {
     // Deploy Treasury proxy
     const treasuryProxyArtifact = await deploy(TREASURY_PROXY_ID, {
@@ -198,9 +196,8 @@ const func: DeployFunction = async function ({
         initializePayload
       )
     );
+    return true;
   }
-
-  return true;
 };
 
 func.tags = ["periphery-pre", "TreasuryProxy"];

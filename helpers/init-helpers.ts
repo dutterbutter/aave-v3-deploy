@@ -419,6 +419,7 @@ export const addMarketToRegistry = async (
   const providerRegistry = await hre.deployments.get(
     "PoolAddressesProviderRegistry"
   );
+  console.log("providerRegistry", providerRegistry);
   const providerRegistryInstance = (await hre.ethers.getContractAt(
     providerRegistry.abi,
     providerRegistry.address

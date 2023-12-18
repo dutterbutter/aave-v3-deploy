@@ -42,7 +42,7 @@ const func: DeployFunction = async function ({
   // @zkSync
   const isZkSync = isZkSyncNetwork(hre);
   const zkDeployer = isZkSync ? setupZkDeployer() : null;
-
+  
   const poolConfig = await loadPoolConfig(MARKET_NAME as ConfigNames);
   const network = (
     process.env.FORK ? process.env.FORK : hre.network.name
@@ -60,6 +60,7 @@ const func: DeployFunction = async function ({
   let faucetOwnable: any;
   if (isZkSync && zkDeployer) {
     // zkSync-specific deployment logic
+    console.log("- Deployment of FaucetOwnable contract");
     ({ deployedInstance: faucetOwnable } = await deployContract(
       zkDeployer,
       deployments,

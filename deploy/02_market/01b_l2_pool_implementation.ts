@@ -14,14 +14,23 @@ import {
   loadPoolConfig,
   waitForTx,
 } from "../../helpers";
+import {
+  setupZkDeployer,
+  isZkSyncNetwork,
+  deployContract,
+} from "../../helpers/utilities/zkDeployer";
+import * as hre from "hardhat";
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
-  ...hre
 }: HardhatRuntimeEnvironment) {
-  const { deploy, get } = deployments;
+  const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
+  // @zkSync
+  const isZkSync = isZkSyncNetwork(hre);
+  const zkDeployer = isZkSync ? setupZkDeployer() : null;
+
   const poolConfig = await loadPoolConfig(MARKET_NAME as ConfigNames);
   const network = (
     process.env.FORK ? process.env.FORK : hre.network.name
@@ -40,25 +49,53 @@ const func: DeployFunction = async function ({
 
   const commonLibraries = await getPoolLibraries();
 
-  // Deploy L2 libraries
-  const calldataLogicLibrary = await deploy("CalldataLogic", {
-    from: deployer,
-  });
+  let poolInstance: any;
+  if (isZkSync && zkDeployer) {
+    // Deploy L2 libraries
+    const { artifact: calldataLogicLibraryArtifact, deployedInstance: calldataLogicLibrary } = await deployContract(
+      zkDeployer,
+      deployments,
+      "CalldataLogic",
+      [],
+      "CalldataLogic"
+    );
 
-  // Deploy L2 supported Pool
-  const poolArtifact = await deploy(L2_POOL_IMPL_ID, {
-    contract: "L2Pool",
-    from: deployer,
-    args: [addressesProviderAddress],
-    libraries: {
-      ...commonLibraries,
-      CalldataLogic: calldataLogicLibrary.address,
-    },
-    ...COMMON_DEPLOY_PARAMS,
-  });
+    // Deploy L2 supported Pool
+    // @zkSync: TODO: Ask about Library linking
+    ({ deployedInstance: poolInstance } = await deployContract(
+      zkDeployer,
+      deployments,
+      "L2Pool",
+      [addressesProviderAddress],
+      L2_POOL_IMPL_ID
+      // TODO: Ask about Library linking
+      // {
+      //   libraries: {
+      //     ...commonLibraries,
+      //     CalldataLogic: calldataLogicLibrary.address,
+      //   },
+      // }
+    ));
+  } else {
+      // Deploy L2 libraries
+    const calldataLogicLibrary = await deploy("CalldataLogic", {
+      from: deployer,
+    });
+    // Deploy L2 supported Pool
+    poolInstance = await deploy(L2_POOL_IMPL_ID, {
+      contract: "L2Pool",
+      from: deployer,
+      args: [addressesProviderAddress],
+      libraries: {
+        ...commonLibraries,
+        CalldataLogic: calldataLogicLibrary.address,
+      },
+      ...COMMON_DEPLOY_PARAMS,
+    });
+  }
 
   // Initialize implementation
-  const pool = await getPool(poolArtifact.address);
+  const pool = await getPool(poolInstance.address);
   await waitForTx(await pool.initialize(addressesProviderAddress));
   console.log("Initialized L2Pool Implementation");
 };

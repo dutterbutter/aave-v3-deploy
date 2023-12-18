@@ -9,14 +9,23 @@ import { WRAPPED_NATIVE_TOKEN_PER_NETWORK } from "../../helpers/constants";
 import { eNetwork } from "../../helpers/types";
 import { POOL_PROXY_ID, TESTNET_TOKEN_PREFIX } from "../../helpers";
 import { MARKET_NAME } from "../../helpers/env";
+import {
+  setupZkDeployer,
+  isZkSyncNetwork,
+  deployContract,
+} from "../../helpers/utilities/zkDeployer";
+import * as hre from "hardhat";
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
-  deployments,
-  ...hre
+  deployments
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
+  // @zkSync
+  const isZkSync = isZkSyncNetwork(hre);
+  const zkDeployer = isZkSync ? setupZkDeployer() : null;
+
   const network = (
     process.env.FORK ? process.env.FORK : hre.network.name
   ) as eNetwork;
@@ -40,10 +49,20 @@ const func: DeployFunction = async function ({
 
   const { address: poolAddress } = await deployments.get(POOL_PROXY_ID);
 
-  await deploy("WrappedTokenGatewayV3", {
-    from: deployer,
-    args: [wrappedNativeTokenAddress, deployer, poolAddress],
-  });
+  if (isZkSync && zkDeployer) {
+    await deployContract(
+      zkDeployer,
+      deployments,
+      "WrappedTokenGatewayV3",
+      [wrappedNativeTokenAddress, deployer, poolAddress],
+      "WrappedTokenGatewayV3"
+    );
+  } else {
+    await deploy("WrappedTokenGatewayV3", {
+      from: deployer,
+      args: [wrappedNativeTokenAddress, deployer, poolAddress],
+    });
+  }
 };
 
 func.tags = ["periphery-post", "WrappedTokenGateway"];

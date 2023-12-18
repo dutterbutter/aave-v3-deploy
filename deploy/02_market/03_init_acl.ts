@@ -10,12 +10,20 @@ import {
   POOL_ADDRESSES_PROVIDER_ID,
 } from "../../helpers/deploy-ids";
 import { MARKET_NAME } from "../../helpers/env";
+import {
+  setupZkDeployer,
+  isZkSyncNetwork,
+  deployContract,
+} from "../../helpers/utilities/zkDeployer";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { getNamedAccounts, deployments } = hre;
   const { deploy } = deployments;
   const { deployer, poolAdmin, aclAdmin, emergencyAdmin } =
     await getNamedAccounts();
+  // @zkSync
+  const isZkSync = isZkSyncNetwork(hre);
+  const zkDeployer = isZkSync ? setupZkDeployer() : null;
 
   const aclAdminSigner = await hre.ethers.getSigner(aclAdmin);
 
@@ -23,6 +31,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     POOL_ADDRESSES_PROVIDER_ID
   );
 
+  // @zkSync TODO: review getSigner
   const addressesProviderInstance = (
     await hre.ethers.getContractAt(
       addressesProviderArtifact.abi,
@@ -33,20 +42,34 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   // 1. Set ACL admin at AddressesProvider
   await waitForTx(await addressesProviderInstance.setACLAdmin(aclAdmin));
 
-  // 2. Deploy ACLManager and setup administrators
-  const aclManagerArtifact = await deploy(ACL_MANAGER_ID, {
-    from: deployer,
-    contract: "ACLManager",
-    args: [addressesProviderArtifact.address],
-    ...COMMON_DEPLOY_PARAMS,
-  });
+  let aclManager: ACLManager;
+  if (isZkSync && zkDeployer) {
+    const { artifact: aclManagerArt, deployedInstance: aclManagerInstance } =
+      await deployContract(
+        zkDeployer,
+        deployments,
+        "ACLManager",
+        [addressesProviderArtifact.address],
+        ACL_MANAGER_ID
+      );
 
-  const aclManager = (
-    await hre.ethers.getContractAt(
-      aclManagerArtifact.abi,
-      aclManagerArtifact.address
-    )
-  ).connect(aclAdminSigner) as ACLManager;
+    aclManager = aclManagerInstance.connect(aclAdminSigner) as ACLManager;
+  } else {
+    // 2. Deploy ACLManager and setup administrators
+    const aclManagerArtifact = await deploy(ACL_MANAGER_ID, {
+      from: deployer,
+      contract: "ACLManager",
+      args: [addressesProviderArtifact.address],
+      ...COMMON_DEPLOY_PARAMS,
+    });
+
+    aclManager = (
+      await hre.ethers.getContractAt(
+        aclManagerArtifact.abi,
+        aclManagerArtifact.address
+      )
+    ).connect(aclAdminSigner) as ACLManager;
+  }
 
   // 3. Setup ACLManager at AddressesProviderInstance
   await waitForTx(

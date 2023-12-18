@@ -70,24 +70,26 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   if (isZkSync && zkDeployer) {
     const {
       artifact: addressesProviderArtifact,
-      deployedInstance: addressesProviderInstance,
+      deployedInstance: addressesProviderInst,
     } = await deployContract(
       zkDeployer,
       deployments,
       "PoolAddressesProvider",
-      ["0", zkDeployer],
+      ["0", zkDeployer.zkWallet.address],
       POOL_ADDRESSES_PROVIDER_ID
     );
+    
+    const signer = await hre.ethers.getSigner(zkDeployer.zkWallet.address);
+    const addressesProviderInstance = addressesProviderInst.connect(signer) as PoolAddressesProvider;
 
     // 2. Set the MarketId
     await waitForTx(
       await addressesProviderInstance.setMarketId(poolConfig.MarketId)
     );
-
     // 3. Add AddressesProvider to Registry
     await addMarketToRegistry(
       poolConfig.ProviderId,
-      addressesProviderArtifact.address
+      addressesProviderInst.address
     );
     // 4. Deploy AaveProtocolDataProvider getters contract
     const {
@@ -97,7 +99,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       zkDeployer,
       deployments,
       "AaveProtocolDataProvider",
-      [addressesProviderArtifact.address],
+      [addressesProviderInst.address],
       POOL_DATA_PROVIDER
     );
 

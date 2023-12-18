@@ -18,14 +18,23 @@ import {
 import { V3_CORE_VERSION, ZERO_ADDRESS } from "../../helpers/constants";
 import { getContract, waitForTx } from "../../helpers";
 import { MARKET_NAME } from "../../helpers/env";
+import {
+  setupZkDeployer,
+  isZkSyncNetwork,
+  deployContract,
+} from "../../helpers/utilities/zkDeployer";
+import * as hre from "hardhat";
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
-  deployments,
-  ...hre
+  deployments
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
+
+  // @zkSync
+  const isZkSync = isZkSyncNetwork(hre);
+  const zkDeployer = isZkSync ? setupZkDeployer() : null;
 
   const { address: addressesProvider } = await deployments.get(
     POOL_ADDRESSES_PROVIDER_ID
@@ -38,104 +47,218 @@ const func: DeployFunction = async function ({
 
   const poolAddress = await addressesProviderInstance.getPool();
 
-  const aTokenArtifact = await deploy(ATOKEN_IMPL_ID, {
-    contract: "AToken",
-    from: deployer,
-    args: [poolAddress],
-    ...COMMON_DEPLOY_PARAMS,
-  });
+  if (isZkSync && zkDeployer) {
 
-  const aToken = (await hre.ethers.getContractAt(
-    aTokenArtifact.abi,
-    aTokenArtifact.address
-  )) as AToken;
-  await waitForTx(
-    await aToken.initialize(
-      poolAddress, // initializingPool
-      ZERO_ADDRESS, // treasury
-      ZERO_ADDRESS, // underlyingAsset
-      ZERO_ADDRESS, // incentivesController
-      0, // aTokenDecimals
-      "ATOKEN_IMPL", // aTokenName
-      "ATOKEN_IMPL", // aTokenSymbol
-      "0x00" // params
-    )
-  );
+    const {
+      artifact: aTokenArtifact,
+      deployedInstance: aTokenInstance,
+    } = await deployContract(
+      zkDeployer,
+      deployments,
+      "AToken",
+      [
+        poolAddress
+      ],
+      ATOKEN_IMPL_ID
+    ); 
 
-  const delegationAwareATokenArtifact = await deploy(
-    DELEGATION_AWARE_ATOKEN_IMPL_ID,
-    {
-      contract: "DelegationAwareAToken",
+    const aToken = aTokenInstance as AToken;
+    await waitForTx(
+      await aToken.initialize(
+        poolAddress, // initializingPool
+        ZERO_ADDRESS, // treasury
+        ZERO_ADDRESS, // underlyingAsset
+        ZERO_ADDRESS, // incentivesController
+        0, // aTokenDecimals
+        "ATOKEN_IMPL", // aTokenName
+        "ATOKEN_IMPL", // aTokenSymbol
+        "0x00" // params
+      )
+    );
+
+    const {
+      artifact: delegationAwareATokenArtifact,
+      deployedInstance: delegationAwareATokenInstance,
+    } = await deployContract(
+      zkDeployer,
+      deployments,
+      "DelegationAwareAToken",
+      [
+        poolAddress
+      ],
+      DELEGATION_AWARE_ATOKEN_IMPL_ID
+    ); 
+    
+    const delegationAwareAToken = delegationAwareATokenInstance as DelegationAwareAToken;
+    await waitForTx(
+      await delegationAwareAToken.initialize(
+        poolAddress, // initializingPool
+        ZERO_ADDRESS, // treasury
+        ZERO_ADDRESS, // underlyingAsset
+        ZERO_ADDRESS, // incentivesController
+        0, // aTokenDecimals
+        "DELEGATION_AWARE_ATOKEN_IMPL", // aTokenName
+        "DELEGATION_AWARE_ATOKEN_IMPL", // aTokenSymbol
+        "0x00" // params
+      )
+    );
+    
+    const {
+      artifact: stableDebtTokenArtifact,
+      deployedInstance: stableDebtTokenInstance,
+    } = await deployContract(
+      zkDeployer,
+      deployments,
+      "StableDebtToken",
+      [
+        poolAddress
+      ],
+      STABLE_DEBT_TOKEN_IMPL_ID
+    );
+
+    const stableDebtToken = stableDebtTokenInstance as StableDebtToken;
+    await waitForTx(
+      await stableDebtToken.initialize(
+        poolAddress, // initializingPool
+        ZERO_ADDRESS, // underlyingAsset
+        ZERO_ADDRESS, // incentivesController
+        0, // debtTokenDecimals
+        "STABLE_DEBT_TOKEN_IMPL", // debtTokenName
+        "STABLE_DEBT_TOKEN_IMPL", // debtTokenSymbol
+        "0x00" // params
+      )
+    );
+
+    const {
+      artifact: variableDebtTokenArtifact,
+      deployedInstance: variableDebtTokenInstance,
+    } = await deployContract(
+      zkDeployer,
+      deployments,
+      "VariableDebtToken",
+      [
+        poolAddress
+      ],
+      VARIABLE_DEBT_TOKEN_IMPL_ID
+    );
+
+    const variableDebtToken = variableDebtTokenInstance as VariableDebtToken;
+    await waitForTx(
+      await variableDebtToken.initialize(
+        poolAddress, // initializingPool
+        ZERO_ADDRESS, // underlyingAsset
+        ZERO_ADDRESS, // incentivesController
+        0, // debtTokenDecimals
+        "VARIABLE_DEBT_TOKEN_IMPL", // debtTokenName
+        "VARIABLE_DEBT_TOKEN_IMPL", // debtTokenSymbol
+        "0x00" // params
+      )
+    );
+  
+    return true;
+
+  } else {
+
+    const aTokenArtifact = await deploy(ATOKEN_IMPL_ID, {
+      contract: "AToken",
       from: deployer,
       args: [poolAddress],
       ...COMMON_DEPLOY_PARAMS,
-    }
-  );
+    });
+  
+    const aToken = (await hre.ethers.getContractAt(
+      aTokenArtifact.abi,
+      aTokenArtifact.address
+    )) as AToken;
+    await waitForTx(
+      await aToken.initialize(
+        poolAddress, // initializingPool
+        ZERO_ADDRESS, // treasury
+        ZERO_ADDRESS, // underlyingAsset
+        ZERO_ADDRESS, // incentivesController
+        0, // aTokenDecimals
+        "ATOKEN_IMPL", // aTokenName
+        "ATOKEN_IMPL", // aTokenSymbol
+        "0x00" // params
+      )
+    );
+  
+    const delegationAwareATokenArtifact = await deploy(
+      DELEGATION_AWARE_ATOKEN_IMPL_ID,
+      {
+        contract: "DelegationAwareAToken",
+        from: deployer,
+        args: [poolAddress],
+        ...COMMON_DEPLOY_PARAMS,
+      }
+    );
+  
+    const delegationAwareAToken = (await hre.ethers.getContractAt(
+      delegationAwareATokenArtifact.abi,
+      delegationAwareATokenArtifact.address
+    )) as DelegationAwareAToken;
+    await waitForTx(
+      await delegationAwareAToken.initialize(
+        poolAddress, // initializingPool
+        ZERO_ADDRESS, // treasury
+        ZERO_ADDRESS, // underlyingAsset
+        ZERO_ADDRESS, // incentivesController
+        0, // aTokenDecimals
+        "DELEGATION_AWARE_ATOKEN_IMPL", // aTokenName
+        "DELEGATION_AWARE_ATOKEN_IMPL", // aTokenSymbol
+        "0x00" // params
+      )
+    );
+  
+    const stableDebtTokenArtifact = await deploy(STABLE_DEBT_TOKEN_IMPL_ID, {
+      contract: "StableDebtToken",
+      from: deployer,
+      args: [poolAddress],
+      ...COMMON_DEPLOY_PARAMS,
+    });
+  
+    const stableDebtToken = (await hre.ethers.getContractAt(
+      stableDebtTokenArtifact.abi,
+      stableDebtTokenArtifact.address
+    )) as StableDebtToken;
+    await waitForTx(
+      await stableDebtToken.initialize(
+        poolAddress, // initializingPool
+        ZERO_ADDRESS, // underlyingAsset
+        ZERO_ADDRESS, // incentivesController
+        0, // debtTokenDecimals
+        "STABLE_DEBT_TOKEN_IMPL", // debtTokenName
+        "STABLE_DEBT_TOKEN_IMPL", // debtTokenSymbol
+        "0x00" // params
+      )
+    );
+  
+    const variableDebtTokenArtifact = await deploy(VARIABLE_DEBT_TOKEN_IMPL_ID, {
+      contract: "VariableDebtToken",
+      from: deployer,
+      args: [poolAddress],
+      ...COMMON_DEPLOY_PARAMS,
+    });
+  
+    const variableDebtToken = (await hre.ethers.getContractAt(
+      variableDebtTokenArtifact.abi,
+      variableDebtTokenArtifact.address
+    )) as VariableDebtToken;
+    await waitForTx(
+      await variableDebtToken.initialize(
+        poolAddress, // initializingPool
+        ZERO_ADDRESS, // underlyingAsset
+        ZERO_ADDRESS, // incentivesController
+        0, // debtTokenDecimals
+        "VARIABLE_DEBT_TOKEN_IMPL", // debtTokenName
+        "VARIABLE_DEBT_TOKEN_IMPL", // debtTokenSymbol
+        "0x00" // params
+      )
+    );
+  
+    return true;
 
-  const delegationAwareAToken = (await hre.ethers.getContractAt(
-    delegationAwareATokenArtifact.abi,
-    delegationAwareATokenArtifact.address
-  )) as DelegationAwareAToken;
-  await waitForTx(
-    await delegationAwareAToken.initialize(
-      poolAddress, // initializingPool
-      ZERO_ADDRESS, // treasury
-      ZERO_ADDRESS, // underlyingAsset
-      ZERO_ADDRESS, // incentivesController
-      0, // aTokenDecimals
-      "DELEGATION_AWARE_ATOKEN_IMPL", // aTokenName
-      "DELEGATION_AWARE_ATOKEN_IMPL", // aTokenSymbol
-      "0x00" // params
-    )
-  );
-
-  const stableDebtTokenArtifact = await deploy(STABLE_DEBT_TOKEN_IMPL_ID, {
-    contract: "StableDebtToken",
-    from: deployer,
-    args: [poolAddress],
-    ...COMMON_DEPLOY_PARAMS,
-  });
-
-  const stableDebtToken = (await hre.ethers.getContractAt(
-    stableDebtTokenArtifact.abi,
-    stableDebtTokenArtifact.address
-  )) as StableDebtToken;
-  await waitForTx(
-    await stableDebtToken.initialize(
-      poolAddress, // initializingPool
-      ZERO_ADDRESS, // underlyingAsset
-      ZERO_ADDRESS, // incentivesController
-      0, // debtTokenDecimals
-      "STABLE_DEBT_TOKEN_IMPL", // debtTokenName
-      "STABLE_DEBT_TOKEN_IMPL", // debtTokenSymbol
-      "0x00" // params
-    )
-  );
-
-  const variableDebtTokenArtifact = await deploy(VARIABLE_DEBT_TOKEN_IMPL_ID, {
-    contract: "VariableDebtToken",
-    from: deployer,
-    args: [poolAddress],
-    ...COMMON_DEPLOY_PARAMS,
-  });
-
-  const variableDebtToken = (await hre.ethers.getContractAt(
-    variableDebtTokenArtifact.abi,
-    variableDebtTokenArtifact.address
-  )) as VariableDebtToken;
-  await waitForTx(
-    await variableDebtToken.initialize(
-      poolAddress, // initializingPool
-      ZERO_ADDRESS, // underlyingAsset
-      ZERO_ADDRESS, // incentivesController
-      0, // debtTokenDecimals
-      "VARIABLE_DEBT_TOKEN_IMPL", // debtTokenName
-      "VARIABLE_DEBT_TOKEN_IMPL", // debtTokenSymbol
-      "0x00" // params
-    )
-  );
-
-  return true;
+  }
 };
 
 func.id = `TokenImplementations:${MARKET_NAME}:aave-v3-core@${V3_CORE_VERSION}`;
