@@ -19,16 +19,24 @@ import {
   POOL_DATA_PROVIDER,
 } from "../../helpers/deploy-ids";
 import { MARKET_NAME } from "../../helpers/env";
+import {
+  setupZkDeployer,
+  isZkSyncNetwork,
+  deployContract,
+} from "../../helpers/utilities/zkDeployer";
+import * as hre from "hardhat";
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
-  ...hre
 }: HardhatRuntimeEnvironment) {
   const network = (
     process.env.FORK ? process.env.FORK : hre.network.name
   ) as eNetwork;
   const { deployer } = await getNamedAccounts();
+  // @zkSync
+  const isZkSync = isZkSyncNetwork(hre);
+  const zkDeployer = isZkSync ? setupZkDeployer() : null;
 
   const poolConfig = (await loadPoolConfig(
     MARKET_NAME as ConfigNames
@@ -62,12 +70,23 @@ const func: DeployFunction = async function ({
       strategyData.stableRateExcessOffset,
       strategyData.optimalStableToTotalDebtRatio,
     ];
-    await deployments.deploy(`ReserveStrategy-${strategyData.name}`, {
-      from: deployer,
-      args: args,
-      contract: "DefaultReserveInterestRateStrategy",
-      log: true,
-    });
+
+    if (isZkSync && zkDeployer) {
+      await deployContract(
+        zkDeployer,
+        deployments,
+        "DefaultReserveInterestRateStrategy",
+        args,
+        `ReserveStrategy-${strategyData.name}`
+      );
+    } else {
+      await deployments.deploy(`ReserveStrategy-${strategyData.name}`, {
+        from: deployer,
+        args: args,
+        contract: "DefaultReserveInterestRateStrategy",
+        log: true,
+      });
+    }
   }
 
   // Deploy Reserves ATokens

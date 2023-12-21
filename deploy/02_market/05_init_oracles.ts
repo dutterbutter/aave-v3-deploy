@@ -31,16 +31,26 @@ import {
 import { eNetwork } from "../../helpers/types";
 import Bluebird from "bluebird";
 import { MARKET_NAME } from "../../helpers/env";
+import {
+  setupZkDeployer,
+  isZkSyncNetwork,
+  deployContract,
+} from "../../helpers/utilities/zkDeployer";
+import * as hre from "hardhat";
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
-  ...hre
 }: HardhatRuntimeEnvironment) {
   const { deployer } = await getNamedAccounts();
+  // @zkSync
+  const isZkSync = isZkSyncNetwork(hre);
+  const zkDeployer = isZkSync ? setupZkDeployer() : null;
+
   const addressesProviderArtifact = await deployments.get(
     POOL_ADDRESSES_PROVIDER_ID
   );
+  // @zkSync TODO: review getSigner
   const addressesProviderInstance = (
     await hre.ethers.getContractAt(
       addressesProviderArtifact.abi,

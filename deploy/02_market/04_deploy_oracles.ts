@@ -19,14 +19,24 @@ import { eNetwork, ICommonConfiguration, SymbolMap } from "../../helpers/types";
 import { getPairsTokenAggregator } from "../../helpers/init-helpers";
 import { parseUnits } from "ethers/lib/utils";
 import { MARKET_NAME } from "../../helpers/env";
+import {
+  setupZkDeployer,
+  isZkSyncNetwork,
+  deployContract,
+} from "../../helpers/utilities/zkDeployer";
+import * as hre from "hardhat";
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
-  ...hre
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
+
+  // @zkSync
+  const isZkSync = isZkSyncNetwork(hre);
+  const zkDeployer = isZkSync ? setupZkDeployer() : null;
+
   const poolConfig = await loadPoolConfig(MARKET_NAME as ConfigNames);
   const network = (
     process.env.FORK ? process.env.FORK : hre.network.name
@@ -48,20 +58,40 @@ const func: DeployFunction = async function ({
     chainlinkAggregators
   );
 
-  // Deploy AaveOracle
-  await deploy(ORACLE_ID, {
-    from: deployer,
-    args: [
-      addressesProviderAddress,
-      assets,
-      sources,
-      fallbackOracleAddress,
-      ZERO_ADDRESS,
-      parseUnits("1", OracleQuoteUnit),
-    ],
-    ...COMMON_DEPLOY_PARAMS,
-    contract: "AaveOracle",
-  });
+  if (isZkSync && zkDeployer) {
+    const {
+      artifact: fallbackOracleArtifact,
+      deployedInstance: fallbackOracle,
+    } = await deployContract(
+      zkDeployer,
+      deployments,
+      "AaveOracle",
+      [
+        addressesProviderAddress,
+        assets,
+        sources,
+        fallbackOracleAddress,
+        ZERO_ADDRESS,
+        parseUnits("1", OracleQuoteUnit),
+      ],
+      ORACLE_ID
+    );
+  } else {
+    // Deploy AaveOracle
+    await deploy(ORACLE_ID, {
+      from: deployer,
+      args: [
+        addressesProviderAddress,
+        assets,
+        sources,
+        fallbackOracleAddress,
+        ZERO_ADDRESS,
+        parseUnits("1", OracleQuoteUnit),
+      ],
+      ...COMMON_DEPLOY_PARAMS,
+      contract: "AaveOracle",
+    });
+  }
 
   return true;
 };

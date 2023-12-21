@@ -13,14 +13,24 @@ import {
 import { checkRequiredEnvironment as checkRequiredEnvironment } from "../../helpers/market-config-helpers";
 import { eNetwork } from "../../helpers/types";
 import { MARKET_NAME } from "../../helpers/env";
+import {
+  setupZkDeployer,
+  isZkSyncNetwork,
+  deployContract,
+} from "../../helpers/utilities/zkDeployer";
+import * as hre from "hardhat";
+import { is } from "bluebird";
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
-  ...hre
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
+
+  // @zkSync
+  const isZkSync = isZkSyncNetwork(hre);
+  const zkDeployer = isZkSync ? setupZkDeployer() : null;
 
   const poolConfig = await loadPoolConfig(MARKET_NAME as ConfigNames);
   const network = (
@@ -29,11 +39,23 @@ const func: DeployFunction = async function ({
 
   // Deploy Mock Flash Loan Receiver if testnet deployment
   if (!hre.config.networks[network].live || poolConfig.TestnetMarket) {
-    await deploy("MockFlashLoanReceiver", {
-      from: deployer,
-      args: [await (await deployments.get(POOL_ADDRESSES_PROVIDER_ID)).address],
-      ...COMMON_DEPLOY_PARAMS,
-    });
+    if (isZkSync && zkDeployer) {
+      await deployContract(
+        zkDeployer,
+        deployments,
+        "MockFlashLoanReceiver",
+        [await (await deployments.get(POOL_ADDRESSES_PROVIDER_ID)).address],
+        "MockFlashLoanReceiver"
+      );
+    } else {
+      await deploy("MockFlashLoanReceiver", {
+        from: deployer,
+        args: [
+          await (await deployments.get(POOL_ADDRESSES_PROVIDER_ID)).address,
+        ],
+        ...COMMON_DEPLOY_PARAMS,
+      });
+    }
   }
 
   return true;

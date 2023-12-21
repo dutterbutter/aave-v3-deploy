@@ -5,6 +5,7 @@ import {
   eHarmonyNetwork,
   eOptimismNetwork,
   ePolygonNetwork,
+  ezkSyncNetwork,
   TransferStrategy,
 } from "./../../helpers/types";
 import { ZERO_ADDRESS } from "../../helpers/constants";
@@ -75,6 +76,7 @@ export const CommonsConfig: ICommonConfiguration = {
       [eArbitrumNetwork.arbitrum]: true,
       [ePolygonNetwork.polygon]: true,
       [eOptimismNetwork.main]: true,
+      [ezkSyncNetwork.main]: true,
       [eFantomNetwork.main]: true,
       [eHarmonyNetwork.main]: true,
       [eAvalancheNetwork.avalanche]: true,
@@ -158,6 +160,9 @@ export const CommonsConfig: ICommonConfiguration = {
     [eArbitrumNetwork.arbitrumTestnet]: true,
     [eOptimismNetwork.main]: true,
     [eOptimismNetwork.testnet]: true,
+    [ezkSyncNetwork.main]: true,
+    [ezkSyncNetwork.zkSyncLocal]: true,
+    [ezkSyncNetwork.zkSyncGoerli]: true,
   },
   ParaswapRegistry: {
     [eEthereumNetwork.main]: "0xa68bEA62Dc4034A689AA0F58A76681433caCa663",

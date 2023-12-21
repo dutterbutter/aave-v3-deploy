@@ -24,15 +24,25 @@ import {
   setupStkAave,
 } from "../../../helpers/contract-deployments";
 import { MARKET_NAME, PERMISSIONED_FAUCET } from "../../../helpers/env";
+import {
+  setupZkDeployer,
+  isZkSyncNetwork,
+  deployContract,
+} from "../../../helpers/utilities/zkDeployer";
+import * as hre from "hardhat";
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
-  ...hre
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer, incentivesEmissionManager, incentivesRewardsVault } =
     await getNamedAccounts();
+
+  // @zkSync
+  const isZkSync = isZkSyncNetwork(hre);
+  const zkDeployer = isZkSync ? setupZkDeployer() : null;
+
   const poolConfig = await loadPoolConfig(MARKET_NAME as ConfigNames);
   const network = (
     process.env.FORK ? process.env.FORK : hre.network.name
@@ -47,16 +57,28 @@ const func: DeployFunction = async function ({
     // Early exit if is not a testnet market
     return;
   }
-  // Deployment of FaucetOwnable helper contract
-  // TestnetERC20 is owned by Faucet. Faucet is owned by defender relayer.
-  console.log("- Deployment of FaucetOwnable contract");
-  const faucetOwnable = await deploy(FAUCET_OWNABLE_ID, {
-    from: deployer,
-    contract: "Faucet",
-    args: [deployer, PERMISSIONED_FAUCET],
-    ...COMMON_DEPLOY_PARAMS,
-  });
-
+  let faucetOwnable: any;
+  if (isZkSync && zkDeployer) {
+    // zkSync-specific deployment logic
+    console.log("- Deployment of FaucetOwnable contract");
+    ({ deployedInstance: faucetOwnable } = await deployContract(
+      zkDeployer,
+      deployments,
+      "Faucet",
+      [zkDeployer.zkWallet.address, PERMISSIONED_FAUCET],
+      FAUCET_OWNABLE_ID
+    ));
+  } else {
+    // Deployment of FaucetOwnable helper contract
+    // TestnetERC20 is owned by Faucet. Faucet is owned by defender relayer.
+    console.log("- Deployment of FaucetOwnable contract");
+    faucetOwnable = await deploy(FAUCET_OWNABLE_ID, {
+      from: deployer,
+      contract: "Faucet",
+      args: [deployer, PERMISSIONED_FAUCET],
+      ...COMMON_DEPLOY_PARAMS,
+    });
+  }
   console.log(
     `- Setting up testnet tokens for "${MARKET_NAME}" market at "${network}" network`
   );
@@ -77,34 +99,65 @@ const func: DeployFunction = async function ({
       throw `[Deployment] Missing token "${symbol}" at ReservesConfig`;
     }
 
-    if (symbol == poolConfig.WrappedNativeTokenSymbol) {
+    if (symbol === poolConfig.WrappedNativeTokenSymbol) {
       console.log("Deploy of WETH9 mock");
-      await deploy(
-        `${poolConfig.WrappedNativeTokenSymbol}${TESTNET_TOKEN_PREFIX}`,
-        {
-          from: deployer,
-          contract: "WETH9Mock",
-          args: [
+
+      if (isZkSync && zkDeployer) {
+        const { deployedInstance: WETH9MockInstance } = await deployContract(
+          zkDeployer,
+          deployments,
+          "WETH9Mock",
+          [
             poolConfig.WrappedNativeTokenSymbol,
             poolConfig.WrappedNativeTokenSymbol,
             faucetOwnable.address,
           ],
-          ...COMMON_DEPLOY_PARAMS,
-        }
-      );
+          `${poolConfig.WrappedNativeTokenSymbol}${TESTNET_TOKEN_PREFIX}`
+        );
+      } else {
+        await deploy(
+          `${poolConfig.WrappedNativeTokenSymbol}${TESTNET_TOKEN_PREFIX}`,
+          {
+            from: deployer,
+            contract: "WETH9Mock",
+            args: [
+              poolConfig.WrappedNativeTokenSymbol,
+              poolConfig.WrappedNativeTokenSymbol,
+              faucetOwnable.address,
+            ],
+            ...COMMON_DEPLOY_PARAMS,
+          }
+        );
+      }
     } else {
       console.log("Deploy of TestnetERC20 contract", symbol);
-      await deploy(`${symbol}${TESTNET_TOKEN_PREFIX}`, {
-        from: deployer,
-        contract: "TestnetERC20",
-        args: [
-          symbol,
-          symbol,
-          reservesConfig[symbol].reserveDecimals,
-          faucetOwnable.address,
-        ],
-        ...COMMON_DEPLOY_PARAMS,
-      });
+
+      if (isZkSync && zkDeployer) {
+        const { deployedInstance: testnetERC20Instance } = await deployContract(
+          zkDeployer,
+          deployments,
+          "TestnetERC20",
+          [
+            symbol,
+            symbol,
+            reservesConfig[symbol].reserveDecimals,
+            faucetOwnable.address,
+          ],
+          `${symbol}${TESTNET_TOKEN_PREFIX}`
+        );
+      } else {
+        await deploy(`${symbol}${TESTNET_TOKEN_PREFIX}`, {
+          from: deployer,
+          contract: "TestnetERC20",
+          args: [
+            symbol,
+            symbol,
+            reservesConfig[symbol].reserveDecimals,
+            faucetOwnable.address,
+          ],
+          ...COMMON_DEPLOY_PARAMS,
+        });
+      }
     }
   });
 
@@ -117,12 +170,23 @@ const func: DeployFunction = async function ({
 
     for (let y = 0; y < rewardSymbols.length; y++) {
       const reward = rewardSymbols[y];
-      await deploy(`${reward}${TESTNET_REWARD_TOKEN_PREFIX}`, {
-        from: deployer,
-        contract: "TestnetERC20",
-        args: [reward, reward, 18, faucetOwnable.address],
-        ...COMMON_DEPLOY_PARAMS,
-      });
+
+      if (isZkSync && zkDeployer) {
+        const { deployedInstance: testnetERC20Instance } = await deployContract(
+          zkDeployer,
+          deployments,
+          "TestnetERC20",
+          [reward, reward, 18, faucetOwnable.address],
+          `${reward}${TESTNET_REWARD_TOKEN_PREFIX}`
+        );
+      } else {
+        await deploy(`${reward}${TESTNET_REWARD_TOKEN_PREFIX}`, {
+          from: deployer,
+          contract: "TestnetERC20",
+          args: [reward, reward, 18, faucetOwnable.address],
+          ...COMMON_DEPLOY_PARAMS,
+        });
+      }
     }
 
     // 3. Deployment of Stake Aave

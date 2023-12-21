@@ -11,14 +11,23 @@ import {
   V3_PERIPHERY_VERSION,
 } from "../../helpers";
 import { MARKET_NAME } from "../../helpers/env";
+import {
+  setupZkDeployer,
+  isZkSyncNetwork,
+  deployContract,
+} from "../../helpers/utilities/zkDeployer";
+import * as hre from "hardhat";
+import { is } from "bluebird";
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
-  ...hre
 }: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
+  // @zkSync
+  const isZkSync = isZkSyncNetwork(hre);
+  const zkDeployer = isZkSync ? setupZkDeployer() : null;
 
   const network = (
     process.env.FORK ? process.env.FORK : hre.network.name
@@ -42,19 +51,39 @@ const func: DeployFunction = async function ({
   );
   const poolAdmin = POOL_ADMIN[network];
 
-  await deploy("ParaSwapLiquiditySwapAdapter", {
-    from: deployer,
-    ...COMMON_DEPLOY_PARAMS,
-    args: [addressesProvider, paraswapAugustusRegistry, poolAdmin],
-  });
+  if (isZkSync && zkDeployer) {
+    await deployContract(
+      zkDeployer,
+      deployments,
+      "ParaSwapLiquiditySwapAdapter",
+      [addressesProvider, paraswapAugustusRegistry, poolAdmin],
+      "ParaSwapLiquiditySwapAdapter"
+    );
 
-  await deploy("ParaSwapRepayAdapter", {
-    from: deployer,
-    ...COMMON_DEPLOY_PARAMS,
-    args: [addressesProvider, paraswapAugustusRegistry, poolAdmin],
-  });
+    await deployContract(
+      zkDeployer,
+      deployments,
+      "ParaSwapRepayAdapter",
+      [addressesProvider, paraswapAugustusRegistry, poolAdmin],
+      "ParaSwapRepayAdapter"
+    );
 
-  return true;
+    return true;
+  } else {
+    await deploy("ParaSwapLiquiditySwapAdapter", {
+      from: deployer,
+      ...COMMON_DEPLOY_PARAMS,
+      args: [addressesProvider, paraswapAugustusRegistry, poolAdmin],
+    });
+
+    await deploy("ParaSwapRepayAdapter", {
+      from: deployer,
+      ...COMMON_DEPLOY_PARAMS,
+      args: [addressesProvider, paraswapAugustusRegistry, poolAdmin],
+    });
+
+    return true;
+  }
 };
 
 // This script can only be run successfully once per market, core version, and network

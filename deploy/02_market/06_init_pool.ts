@@ -22,14 +22,23 @@ import {
 import { PoolAddressesProvider } from "../../typechain";
 import { getContract, waitForTx } from "../../helpers/utilities/tx";
 import { MARKET_NAME } from "../../helpers/env";
+import {
+  setupZkDeployer,
+  isZkSyncNetwork,
+  deployContract,
+} from "../../helpers/utilities/zkDeployer";
+import * as hre from "hardhat";
 
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
-  ...hre
 }: HardhatRuntimeEnvironment) {
   const { save, deploy } = deployments;
   const { deployer } = await getNamedAccounts();
+  // @zkSync
+  const isZkSync = isZkSyncNetwork(hre);
+  const zkDeployer = isZkSync ? setupZkDeployer() : null;
+
   const poolConfig = await loadPoolConfig(MARKET_NAME as ConfigNames);
 
   const proxyArtifact = await deployments.getExtendedArtifact(
@@ -48,6 +57,7 @@ const func: DeployFunction = async function ({
     POOL_ADDRESSES_PROVIDER_ID
   );
 
+  // @zkSync TODO: review getSigner
   const addressesProviderInstance = (
     await getContract("PoolAddressesProvider", addressesProvider)
   ).connect(await hre.ethers.getSigner(deployer)) as PoolAddressesProvider;
@@ -100,16 +110,28 @@ const func: DeployFunction = async function ({
   });
 
   if (isL2PoolSupported(poolConfig)) {
-    // Deploy L2 Encoder
-    await deploy(L2_ENCODER, {
-      from: deployer,
-      contract: "L2Encoder",
-      args: [poolProxyAddress],
-      ...COMMON_DEPLOY_PARAMS,
-    });
+    if (isZkSync && zkDeployer) {
+      // Deploy L2 Encoder
+      await deployContract(
+        zkDeployer,
+        deployments,
+        "L2Encoder",
+        [poolProxyAddress],
+        L2_ENCODER
+      );
+    } else {
+      // Deploy L2 Encoder
+      await deploy(L2_ENCODER, {
+        from: deployer,
+        contract: "L2Encoder",
+        args: [poolProxyAddress],
+        ...COMMON_DEPLOY_PARAMS,
+      });
+    }
   }
 
   // Set Flash Loan premiums
+  // @zkSync TODO: review getSigner
   const poolConfiguratorInstance = (await getPoolConfiguratorProxy()).connect(
     await hre.ethers.getSigner(deployer)
   );

@@ -28,6 +28,12 @@ import {
   waitForTx,
 } from "../../helpers";
 import { MARKET_NAME } from "../../helpers/env";
+import {
+  setupZkDeployer,
+  isZkSyncNetwork,
+  deployContract,
+} from "../../helpers/utilities/zkDeployer";
+import * as hre from "hardhat";
 
 /**
  * @notice An incentives proxy can be deployed per network or per market.
@@ -37,7 +43,6 @@ import { MARKET_NAME } from "../../helpers/env";
 const func: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
-  ...hre
 }: HardhatRuntimeEnvironment) {
   const { save, deploy } = deployments;
   const network = (
@@ -46,6 +51,10 @@ const func: DeployFunction = async function ({
   const isLive = hre.config.networks[network].live;
   const { deployer, incentivesRewardsVault, incentivesEmissionManager } =
     await getNamedAccounts();
+
+  // @zkSync
+  const isZkSync = isZkSyncNetwork(hre);
+  const zkDeployer = isZkSync ? setupZkDeployer() : null;
 
   const poolConfig = await loadPoolConfig(MARKET_NAME as ConfigNames);
 
@@ -57,33 +66,63 @@ const func: DeployFunction = async function ({
     POOL_ADDRESSES_PROVIDER_ID
   );
 
+  // @zkSync TODO: review getSigner
   const addressesProviderInstance = (
     await getContract("PoolAddressesProvider", addressesProvider)
   ).connect(await hre.ethers.getSigner(deployer)) as PoolAddressesProvider;
 
-  // Deploy EmissionManager
-  const emissionManagerArtifact = await deploy(EMISSION_MANAGER_ID, {
-    from: deployer,
-    contract: "EmissionManager",
-    args: [deployer],
-    ...COMMON_DEPLOY_PARAMS,
-  });
-  const emissionManager = (await hre.ethers.getContractAt(
-    emissionManagerArtifact.abi,
-    emissionManagerArtifact.address
-  )) as EmissionManager;
+  let emissionManager: EmissionManager;
+  let incentivesImpl: RewardsController;
+  if (isZkSync && zkDeployer) {
+    const {
+      artifact: emissionManagerArtifact,
+      deployedInstance: emissionManagerInstance,
+    } = await deployContract(
+      zkDeployer,
+      deployments,
+      "EmissionManager",
+      [zkDeployer.zkWallet.address],
+      EMISSION_MANAGER_ID
+    );
+    emissionManager = emissionManagerInstance as EmissionManager;
 
-  // Deploy Incentives Implementation
-  const incentivesImplArtifact = await deploy(INCENTIVES_V2_IMPL_ID, {
-    from: deployer,
-    contract: "RewardsController",
-    args: [emissionManagerArtifact.address],
-    ...COMMON_DEPLOY_PARAMS,
-  });
-  const incentivesImpl = (await hre.ethers.getContractAt(
-    incentivesImplArtifact.abi,
-    incentivesImplArtifact.address
-  )) as RewardsController;
+    const {
+      artifact: incentivesImplArtifact,
+      deployedInstance: incentivesImplInstance,
+    } = await deployContract(
+      zkDeployer,
+      deployments,
+      "RewardsController",
+      [emissionManager.address],
+      INCENTIVES_V2_IMPL_ID
+    );
+
+    incentivesImpl = incentivesImplInstance as RewardsController;
+  } else {
+    // Deploy EmissionManager
+    const emissionManagerArtifact = await deploy(EMISSION_MANAGER_ID, {
+      from: deployer,
+      contract: "EmissionManager",
+      args: [deployer],
+      ...COMMON_DEPLOY_PARAMS,
+    });
+    emissionManager = (await hre.ethers.getContractAt(
+      emissionManagerArtifact.abi,
+      emissionManagerArtifact.address
+    )) as EmissionManager;
+
+    // Deploy Incentives Implementation
+    const incentivesImplArtifact = await deploy(INCENTIVES_V2_IMPL_ID, {
+      from: deployer,
+      contract: "RewardsController",
+      args: [emissionManagerArtifact.address],
+      ...COMMON_DEPLOY_PARAMS,
+    });
+    incentivesImpl = (await hre.ethers.getContractAt(
+      incentivesImplArtifact.abi,
+      incentivesImplArtifact.address
+    )) as RewardsController;
+  }
 
   // Call to initialize at implementation contract to prevent others.
   await waitForTx(await incentivesImpl.initialize(ZERO_ADDRESS));
@@ -130,35 +169,70 @@ const func: DeployFunction = async function ({
   );
 
   if (!isLive) {
-    await deploy(INCENTIVES_PULL_REWARDS_STRATEGY_ID, {
-      from: deployer,
-      contract: "PullRewardsTransferStrategy",
-      args: [
-        rewardsProxyAddress,
-        incentivesEmissionManager,
-        incentivesRewardsVault,
-      ],
-      ...COMMON_DEPLOY_PARAMS,
-    });
-    const stakedAaveAddress = isLive
-      ? getParamPerNetwork(poolConfig.StkAaveProxy, network)
-      : (await deployments.getOrNull(STAKE_AAVE_PROXY))?.address;
+    if (isZkSync && zkDeployer) {
+      await deployContract(
+        zkDeployer,
+        deployments,
+        "PullRewardsTransferStrategy",
+        [
+          rewardsProxyAddress,
+          incentivesEmissionManager,
+          incentivesRewardsVault,
+        ],
+        INCENTIVES_PULL_REWARDS_STRATEGY_ID
+      );
+      const stakedAaveAddress = isLive
+        ? getParamPerNetwork(poolConfig.StkAaveProxy, network)
+        : (await deployments.getOrNull(STAKE_AAVE_PROXY))?.address;
 
-    if (stakedAaveAddress) {
-      await deploy(INCENTIVES_STAKED_TOKEN_STRATEGY_ID, {
+      if (stakedAaveAddress) {
+        await deployContract(
+          zkDeployer,
+          deployments,
+          "StakedTokenTransferStrategy",
+          [
+            rewardsProxyAddress,
+            incentivesEmissionManager,
+            getParamPerNetwork(poolConfig.StkAaveProxy, network),
+          ],
+          INCENTIVES_STAKED_TOKEN_STRATEGY_ID
+        );
+      } else {
+        console.log(
+          "[WARNING] Missing StkAave address. Skipping StakedTokenTransferStrategy deployment."
+        );
+      }
+    } else {
+      await deploy(INCENTIVES_PULL_REWARDS_STRATEGY_ID, {
         from: deployer,
-        contract: "StakedTokenTransferStrategy",
+        contract: "PullRewardsTransferStrategy",
         args: [
           rewardsProxyAddress,
           incentivesEmissionManager,
-          stakedAaveAddress,
+          incentivesRewardsVault,
         ],
         ...COMMON_DEPLOY_PARAMS,
       });
-    } else {
-      console.log(
-        "[WARNING] Missing StkAave address. Skipping StakedTokenTransferStrategy deployment."
-      );
+      const stakedAaveAddress = isLive
+        ? getParamPerNetwork(poolConfig.StkAaveProxy, network)
+        : (await deployments.getOrNull(STAKE_AAVE_PROXY))?.address;
+
+      if (stakedAaveAddress) {
+        await deploy(INCENTIVES_STAKED_TOKEN_STRATEGY_ID, {
+          from: deployer,
+          contract: "StakedTokenTransferStrategy",
+          args: [
+            rewardsProxyAddress,
+            incentivesEmissionManager,
+            stakedAaveAddress,
+          ],
+          ...COMMON_DEPLOY_PARAMS,
+        });
+      } else {
+        console.log(
+          "[WARNING] Missing StkAave address. Skipping StakedTokenTransferStrategy deployment."
+        );
+      }
     }
   }
 
